@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/paymentdb
+    url: jdbc:postgresql://localhost:5432/frauddb
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
@@ -10,6 +10,10 @@ spring:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.PostgreSQL10Dialect
     show-sql: true
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 20
 
   flyway:
     enabled: false
@@ -17,23 +21,24 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: payment-test-group
+      group-id: fraud-test-group
       auto-offset-reset: earliest
-    producer:
-      acks: all
 
-# Test Feign clients configuration (if using in tests)
-services:
-  account-service:
-    url: http://localhost:8081
-  fraud-service:
-    url: http://localhost:8082
+# Fraud rule configurations for testing
+fraud:
+  detection:
+    high-value-threshold: 10000.00
+    risk-score-threshold: 75
+    max-transaction-per-hour: 10
+    suspicious-ip-ranges:
+      - "192.168.1.0/24"
+      - "10.0.0.0/8"
 
 logging:
   level:
     root: WARN
     com.payments.platform: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.kafka: DEBUG
 
 server:
   port: 0

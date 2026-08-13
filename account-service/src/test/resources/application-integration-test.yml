@@ -1,0 +1,21 @@
+spring:
+  config:
+    import: classpath:application-test.yml
+
+  testcontainers:
+    service-connections:
+      postgres:
+        image-name: postgres:16-alpine
+        database-name: accountdb
+        username: testuser
+        password: testpass
+
+  datasource:
+    # Testcontainers will override the URL automatically
+    url: jdbc:tc:postgresql:16-alpine:///accountdb
+    username: testuser
+    password: testpass
+
+  kafka:
+    # For integration tests with Kafka containers
+    bootstrap-servers: ${spring.embedded.kafka.brokers:localhost:9092}

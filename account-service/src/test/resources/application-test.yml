@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/accountdb
+    username: testuser
+    password: testpass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.payments.platform: DEBUG
+    org.springframework.transaction: TRACE
+    org.springframework.jdbc: DEBUG
+
+server:
+  port: 0  # Random port for parallel test execution
