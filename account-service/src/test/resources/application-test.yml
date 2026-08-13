@@ -4,15 +4,20 @@ spring:
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
 
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 20
 
   flyway:
     enabled: false
@@ -21,8 +26,8 @@ logging:
   level:
     root: WARN
     com.payments.platform: DEBUG
-    org.springframework.transaction: TRACE
-    org.springframework.jdbc: DEBUG
+    org.springframework.test: INFO
+    org.springframework.test.context.cache: WARN
 
 server:
-  port: 0  # Random port for parallel test execution
+  port: 0

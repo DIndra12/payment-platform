@@ -4,12 +4,14 @@ spring:
     username: testuser
     password: testpass
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
 
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
 
   flyway:
     enabled: false
@@ -22,7 +24,6 @@ spring:
     producer:
       acks: all
 
-# Test Feign clients configuration (if using in tests)
 services:
   account-service:
     url: http://localhost:8081
@@ -33,7 +34,6 @@ logging:
   level:
     root: WARN
     com.payments.platform: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
 
 server:
   port: 0

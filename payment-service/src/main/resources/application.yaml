@@ -1,20 +1,91 @@
-server:
-  port: 8083
-
 spring:
   application:
     name: payment-service
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/payment_db
-    username: postgres
-    password: password
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:payment_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15
+
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
 
-external-services:
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    template:
+      default-topic: payment.events
+
+server:
+  port: 8083
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Feign Clients Config
+services:
   account-service:
-    url: http://localhost:8081
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
   fraud-service:
-    url: http://localhost:8082
+    url: ${FRAUD_SERVICE_URL:http://localhost:8082}
+
+# Resilience4j config (Circuit Breaker & Retry)
+resilience4j:
+  circuitbreaker:
+    instances:
+      fraud-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+      account-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      fraud-service:
+        maxAttempts: 3
+        waitDuration: 1s
+      account-service:
+        maxAttempts: 3
+        waitDuration: 1s
+
+# Actuator & Metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.payments.platform: DEBUG
+    org.springframework.cloud.openfeign: DEBUG

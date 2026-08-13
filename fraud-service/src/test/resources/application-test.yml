@@ -8,12 +8,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQL10Dialect
-    show-sql: true
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: 20
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
 
   flyway:
     enabled: false
@@ -24,21 +20,10 @@ spring:
       group-id: fraud-test-group
       auto-offset-reset: earliest
 
-# Fraud rule configurations for testing
-fraud:
-  detection:
-    high-value-threshold: 10000.00
-    risk-score-threshold: 75
-    max-transaction-per-hour: 10
-    suspicious-ip-ranges:
-      - "192.168.1.0/24"
-      - "10.0.0.0/8"
-
 logging:
   level:
     root: WARN
     com.payments.platform: DEBUG
-    org.springframework.kafka: DEBUG
 
 server:
   port: 0
