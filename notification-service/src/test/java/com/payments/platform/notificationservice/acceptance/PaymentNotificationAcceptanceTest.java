@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class PaymentNotificationAcceptanceTest {
 
     @Container
-    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.0"))
+    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:6.2.2"))
             .withStartupTimeout(Duration.ofMinutes(3));
 
     @DynamicPropertySource
