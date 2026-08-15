@@ -42,6 +42,7 @@ public class TestContainersConfig implements BeforeAllCallback {
             String host = POSTGRES_CONTAINER.getHost();
             int port = POSTGRES_CONTAINER.getFirstMappedPort();
             String dbName = POSTGRES_CONTAINER.getDatabaseName();
+            System.setProperty("SPRING_DATASOURCE_URL", url);
             System.setProperty("spring.datasource.url", url);
             System.setProperty("spring.datasource.username", user);
             System.setProperty("spring.datasource.password", pass);
@@ -52,6 +53,7 @@ public class TestContainersConfig implements BeforeAllCallback {
             System.setProperty("DB_HOST", host);
             System.setProperty("DB_PORT", String.valueOf(port));
             System.setProperty("DB_NAME", dbName);
+            registry.add("SPRING_DATASOURCE_URL", () -> url);
             registry.add("spring.datasource.url", () -> url);
             registry.add("spring.datasource.username", () -> user);
             registry.add("spring.datasource.password", () -> pass);
