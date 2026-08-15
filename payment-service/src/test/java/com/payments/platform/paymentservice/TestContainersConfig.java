@@ -35,12 +35,22 @@ public class TestContainersConfig implements BeforeAllCallback {
         } else {
             // No external DB provided — start Testcontainers now so DynamicPropertySource exposes a valid JDBC URL
             POSTGRES_CONTAINER.start();
-            registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
-            registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
-            registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
-            registry.add("spring.flyway.url", POSTGRES_CONTAINER::getJdbcUrl);
-            registry.add("spring.flyway.user", POSTGRES_CONTAINER::getUsername);
-            registry.add("spring.flyway.password", POSTGRES_CONTAINER::getPassword);
+            // set system properties immediately so Spring can pick them up during context bootstrap
+            String url = POSTGRES_CONTAINER.getJdbcUrl();
+            String user = POSTGRES_CONTAINER.getUsername();
+            String pass = POSTGRES_CONTAINER.getPassword();
+            System.setProperty("spring.datasource.url", url);
+            System.setProperty("spring.datasource.username", user);
+            System.setProperty("spring.datasource.password", pass);
+            System.setProperty("spring.flyway.url", url);
+            System.setProperty("spring.flyway.user", user);
+            System.setProperty("spring.flyway.password", pass);
+            registry.add("spring.datasource.url", () -> url);
+            registry.add("spring.datasource.username", () -> user);
+            registry.add("spring.datasource.password", () -> pass);
+            registry.add("spring.flyway.url", () -> url);
+            registry.add("spring.flyway.user", () -> user);
+            registry.add("spring.flyway.password", () -> pass);
         }
     }
 
