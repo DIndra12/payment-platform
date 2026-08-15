@@ -20,6 +20,7 @@ public class OutboxEvent {
     private String eventType;
 
     @Column(columnDefinition = "jsonb")
+    @jakarta.persistence.Convert(converter = JsonbStringConverter.class)
     private String payload;
 
     private LocalDateTime createdAt = LocalDateTime.now();
