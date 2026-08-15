@@ -27,6 +27,12 @@ jobs:
         with:
           languages: java
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
       - name: Build (explicit)
         run: |
           mvn -B -DskipITs=true -DskipTests=false -pl payment-service -am test
