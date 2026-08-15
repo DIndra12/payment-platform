@@ -23,7 +23,7 @@ public class OutboxPublisher {
     public void publishEvents() {
         List<OutboxEvent> events = repository.findByPublishedFalse();
         for (OutboxEvent event : events) {
-            kafkaTemplate.send(event.getEventType(), event.getPayload());
+            kafkaTemplate.send(event.getEventType(), event.getPayload().toString());
             event.setPublished(true);
             repository.save(event);
         }

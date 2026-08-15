@@ -5,9 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,9 +19,8 @@ public class OutboxEvent {
     private String aggregateType;
     private String eventType;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private JsonNode payload;
+    @Column(columnDefinition = "text")
+    private String payload;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private boolean published = false;

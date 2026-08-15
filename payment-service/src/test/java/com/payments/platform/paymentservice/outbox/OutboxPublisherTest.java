@@ -36,9 +36,7 @@ class OutboxPublisherTest {
         event.setAggregateId("123");
         event.setAggregateType("Payment");
         event.setEventType("payment.initiated");
-        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        com.fasterxml.jackson.databind.JsonNode payload = mapper.readTree("{\"amount\":100}");
-        event.setPayload(payload);
+        event.setPayload("{\"amount\":100}");
         repository.save(event);
 
         // Mock Kafka send always succeeds
