@@ -54,6 +54,8 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
       - name: Run unit tests
         run: mvn -B -pl payment-service -am -DskipITs=true test
+        env:
+          JAVA_TOOL_OPTIONS: '-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false'
 
   integration-tests:
     name: Integration Tests
