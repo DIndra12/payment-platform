@@ -1,9 +1,19 @@
 package com.payments.platform.paymentservice.client.dto;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-@Data
-public class FraudCheckResponse {
-    private boolean isFraudulent;
-    private String riskReason;
-}
+/**
+ * Response from Fraud Service /risk/evaluate endpoint.
+ * Maps to the Fraud Service's actual response contract, not an invented schema.
+ */
+public record FraudCheckResponse(
+    @JsonProperty("riskScore")
+    int riskScore,
+
+    @JsonProperty("decision")
+    RiskDecision decision,
+
+    @JsonProperty("reasons")
+    List<String> reasons
+) {}

@@ -2,31 +2,13 @@ spring:
   application:
     name: fraud-service
 
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:fraud_db}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:postgres}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-
 server:
   port: 8082
   error:
     include-message: always
     include-binding-errors: always
 
-# Fraud specific business logic configs
+# Fraud detection thresholds
 fraud:
   detection:
     risk-score-threshold: 75

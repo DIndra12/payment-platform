@@ -3,6 +3,7 @@ package com.payments.platform.fraudservice.controller;
 import com.payments.platform.fraudservice.dto.FraudCheckRequest;
 import com.payments.platform.fraudservice.dto.FraudCheckResponse;
 import com.payments.platform.fraudservice.service.FraudDetectionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,7 +18,7 @@ public class FraudController {
     private final FraudDetectionService fraudDetectionService;
 
     @PostMapping("/evaluate")
-    public FraudCheckResponse evaluateRisk(@RequestBody FraudCheckRequest request) {
+    public FraudCheckResponse evaluateRisk(@Valid @RequestBody FraudCheckRequest request) {
         return fraudDetectionService.evaluate(request);
     }
 }

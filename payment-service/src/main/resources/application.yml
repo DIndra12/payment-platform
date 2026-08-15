@@ -43,11 +43,10 @@ server:
   error:
     include-message: always
 
-services:
-  account-service:
-    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
-  fraud-service:
-    url: ${FRAUD_SERVICE_URL:http://localhost:8082}
+# External service URLs — validated at startup by ExternalServicesProperties
+external-services:
+  account-service-url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+  fraud-service-url: ${FRAUD_SERVICE_URL:http://localhost:8082}
 
 management:
   endpoints:

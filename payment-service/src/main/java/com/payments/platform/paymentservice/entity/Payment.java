@@ -22,14 +22,19 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "idempotency_key", nullable = false, unique = true, length = 64)
+    private String idempotencyKey;
+
     private UUID payerAccountId;
     private UUID payeeAccountId;
     private BigDecimal amount;
     private String currency;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private PaymentStatus status;
 
+    @Column(columnDefinition = "TEXT")
     private String failureReason;
 
     @CreationTimestamp

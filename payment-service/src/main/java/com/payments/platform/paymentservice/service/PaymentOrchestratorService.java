@@ -23,9 +23,25 @@ public class PaymentOrchestratorService {
     private final FraudClient fraudClient;
     private final AccountClient accountClient;
 
-    public PaymentResponse processPayment(PaymentRequest request) {
-        // 1. Initialize Payment in Database
+    /**
+     * Process a payment request idempotently.
+     *
+     * @param request payment details
+     * @param idempotencyKey unique identifier; if a payment with this key exists, return its result
+     * @return payment response (202 Accepted on success, with payment ID and status)
+     */
+    public PaymentResponse processPayment(PaymentRequest request, String idempotencyKey) {
+        // 1. Idempotency check: if we've seen this key before, return the existing result
+        var existingPayment = paymentRepository.findByIdempotencyKey(idempotencyKey);
+        if (existingPayment.isPresent()) {
+            log.info("Idempotent retry detected for key: {}. Returning existing payment ID: {}",
+                    idempotencyKey, existingPayment.get().getId());
+            return mapToResponse(existingPayment.get());
+        }
+
+        // 2. Initialize Payment in Database
         Payment payment = Payment.builder()
+                .idempotencyKey(idempotencyKey)
                 .payerAccountId(request.getPayerAccountId())
                 .payeeAccountId(request.getPayeeAccountId())
                 .amount(request.getAmount())
@@ -34,7 +50,7 @@ public class PaymentOrchestratorService {
                 .build();
 
         payment = paymentRepository.save(payment);
-        log.info("Payment INITIATED with ID: {}", payment.getId());
+        log.info("Payment INITIATED with ID: {} (idempotency key: {})", payment.getId(), idempotencyKey);
 
         try {
             // 2. Fraud Check Step
@@ -46,9 +62,11 @@ public class PaymentOrchestratorService {
                             .build()
             );
 
-            if (fraudResponse.isFraudulent()) {
-                log.warn("Payment {} rejected by Fraud Service. Reason: {}", payment.getId(), fraudResponse.getRiskReason());
-                return updatePaymentState(payment, PaymentStatus.REJECTED_BY_FRAUD, fraudResponse.getRiskReason());
+            if (fraudResponse.decision() == com.payments.platform.paymentservice.client.dto.RiskDecision.REJECT) {
+                String reason = String.join(", ", fraudResponse.reasons());
+                log.warn("Payment {} rejected by Fraud Service (risk score: {}). Reasons: {}",
+                        payment.getId(), fraudResponse.riskScore(), reason);
+                return updatePaymentState(payment, PaymentStatus.REJECTED_BY_FRAUD, reason);
             }
 
             // 3. Account Debit Step
@@ -72,20 +90,16 @@ public class PaymentOrchestratorService {
 
     private PaymentResponse updatePaymentState(Payment payment, PaymentStatus newStatus, String reason) {
         payment.setStatus(newStatus);
-
-        // Safely truncate the reason to 255 characters to satisfy the database constraint
-        String safeReason = reason;
-        if (reason != null && reason.length() > 255) {
-            safeReason = reason.substring(0, 252) + "...";
-        }
-
-        payment.setFailureReason(safeReason);
+        payment.setFailureReason(reason);
         paymentRepository.save(payment);
+        return mapToResponse(payment);
+    }
 
+    private PaymentResponse mapToResponse(Payment payment) {
         return PaymentResponse.builder()
                 .paymentId(payment.getId())
-                .status(newStatus)
-                .message(safeReason)
+                .status(payment.getStatus())
+                .message(payment.getFailureReason())
                 .build();
     }
 }
