@@ -244,7 +244,7 @@ docker ps | grep payments-postgres
 
 Then start PostgreSQL and ensure it's on port 5432.
 
-#### 4. **Docker & Docker Compose (Optional, for full environment)**
+#### 4. **Docker & Docker Compose (Required for Acceptance Tests)**
 
 **Windows/Mac:**
 1. Download [Docker Desktop](https://www.docker.com/products/docker-desktop/)
@@ -505,6 +505,15 @@ cd payment-platform
 # Starts real PostgreSQL via Testcontainers
 ```
 
+**Acceptance tests (high-fidelity, requires Docker):**
+```bash
+# Ensure Docker is running first!
+docker --version
+
+# Run acceptance tests for all services
+./mvnw -P acceptance test
+```
+
 **Code coverage enforcement (90% per package):**
 ```bash
 ./mvnw -P coverage test
@@ -561,20 +570,22 @@ payment-service/src/test/java/
 │   └── outbox/
 │       ├── OutboxIntegrationTest.java
 │       └── OutboxPublisherTest.java
-└── acceptance/                     # Full end-to-end (currently empty)
-    └── (place E2E tests here)
+└── acceptance/                     # Full end-to-end tests using Testcontainers
+    └── PaymentOrchestrationAcceptanceTest.java
 
 account-service/src/test/java/
 ├── unit/
 ├── integration/
 │   └── AccountServiceApplicationTests.java
 └── acceptance/
+    └── AccountBalanceAcceptanceTest.java
 
 fraud-service/src/test/java/
 ├── unit/
 ├── integration/
 │   └── FraudDetectionServiceApplicationTests.java
 └── acceptance/
+    └── FraudRiskEvaluationAcceptanceTest.java
 ```
 
 ---

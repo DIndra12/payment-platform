@@ -33,6 +33,7 @@
         <module>account-service</module>
         <module>fraud-service</module>
         <module>payment-service</module>
+        <module>notification-service</module>
     </modules>
 
     <dependencyManagement>
@@ -111,25 +112,29 @@
     </dependencies>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Surefire: unit/integration/acceptance test configuration -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <!-- Default: run unit tests and application context tests -->
+                        <includes>
+                            <include>**/unit/**/*Test.java</include>
+                            <include>**/*ApplicationTests.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
-            <!-- Surefire: unit/integration/acceptance test configuration -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <configuration>
-                    <!-- Default: run unit tests only -->
-                    <includes>
-                        <include>**/unit/**/*Test.java</include>
-                        <include>**/*ApplicationTests.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/integration/**/*Test.java</exclude>
-                        <exclude>**/acceptance/**/*Test.java</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
-
             <!-- JaCoCo: Code coverage reporting (enforcement enabled via 'coverage' profile) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -205,8 +210,6 @@
                                 <include>**/unit/**/*Test.java</include>
                             </includes>
                             <excludes>
-                                <exclude>**/integration/**/*Test.java</exclude>
-                                <exclude>**/acceptance/**/*Test.java</exclude>
                                 <exclude>**/*ApplicationTests.java</exclude>
                             </excludes>
                         </configuration>
@@ -228,10 +231,6 @@
                                 <include>**/integration/**/*Test.java</include>
                                 <include>**/*ApplicationTests.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/unit/**/*Test.java</exclude>
-                                <exclude>**/acceptance/**/*Test.java</exclude>
-                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -250,11 +249,6 @@
                             <includes>
                                 <include>**/acceptance/**/*Test.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/unit/**/*Test.java</exclude>
-                                <exclude>**/integration/**/*Test.java</exclude>
-                                <exclude>**/*ApplicationTests.java</exclude>
-                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -264,9 +258,6 @@
         <!-- All tests (default when no profile specified) -->
         <profile>
             <id>all-tests</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
             <build>
                 <plugins>
                     <plugin>
@@ -275,7 +266,6 @@
                         <configuration>
                             <includes>
                                 <include>**/*Test.java</include>
-                                <include>**/*ApplicationTests.java</include>
                             </includes>
                         </configuration>
                     </plugin>
