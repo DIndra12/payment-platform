@@ -10,7 +10,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @Testcontainers
 public class TestContainersConfig implements BeforeAllCallback {
 
-    public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:15.3-alpine")
+    public static final PostgreSQLContainer<?> POSTGRES_CONTAINER = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("paymentdb")
             .withUsername("test")
             .withPassword("test");
