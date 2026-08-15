@@ -17,15 +17,16 @@ public class TestContainersConfig implements BeforeAllCallback {
 
     static {
         POSTGRES_CONTAINER.start();
-        // Apply SQL migrations directly for tests to avoid Flyway auto-detection issues in this environment
-        try (java.sql.Connection c = java.sql.DriverManager.getConnection(POSTGRES_CONTAINER.getJdbcUrl(), POSTGRES_CONTAINER.getUsername(), POSTGRES_CONTAINER.getPassword())) {
-            org.springframework.core.io.ClassPathResource r1 = new org.springframework.core.io.ClassPathResource("db/migration/V1__init_payment_schema.sql");
-            org.springframework.core.io.ClassPathResource r2 = new org.springframework.core.io.ClassPathResource("db/migration/V2__create_outbox.sql");
-            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(c, r1);
-            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(c, r2);
-            // Skip V3 in tests because it contains DO $$ blocks which ScriptUtils may not handle reliably
+        // Run Flyway programmatically against the container so migrations in src/main/resources/db/migration are applied for tests
+        try {
+            org.flywaydb.core.Flyway flyway = org.flywaydb.core.Flyway.configure()
+                    .dataSource(POSTGRES_CONTAINER.getJdbcUrl(), POSTGRES_CONTAINER.getUsername(), POSTGRES_CONTAINER.getPassword())
+                    .locations("classpath:db/migration")
+                    .baselineOnMigrate(true)
+                    .load();
+            flyway.migrate();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to apply migration scripts to Testcontainers Postgres", e);
+            throw new RuntimeException("Failed to run Flyway migrations against Testcontainers Postgres", e);
         }
     }
 
