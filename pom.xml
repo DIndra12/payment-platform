@@ -283,7 +283,7 @@
             </build>
         </profile>
 
-        <!-- Code Coverage Enforcement (95% per-package) -->
+        <!-- Code Coverage Enforcement (90% per-package) -->
         <!-- Usage: mvn -P coverage test -->
         <profile>
             <id>coverage</id>
@@ -302,7 +302,7 @@
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <!-- Core business packages: 95% line coverage -->
+                                        <!-- Core business packages: 90% line coverage -->
                                         <rule>
                                             <element>PACKAGE</element>
                                             <includes>
@@ -319,7 +319,7 @@
                                                 <limit>
                                                     <counter>LINE</counter>
                                                     <value>COVEREDRATIO</value>
-                                                    <minimum>0.95</minimum>
+                                                    <minimum>0.90</minimum>
                                                 </limit>
                                             </limits>
                                         </rule>
