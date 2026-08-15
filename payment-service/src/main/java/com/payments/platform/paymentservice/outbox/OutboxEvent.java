@@ -8,6 +8,8 @@ import lombok.Setter;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Convert;
 import com.payments.platform.paymentservice.outbox.JsonNodeConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,6 +24,7 @@ public class OutboxEvent {
     private String aggregateType;
     private String eventType;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Convert(converter = JsonNodeConverter.class)
     @Column(columnDefinition = "jsonb")
     private JsonNode payload;
