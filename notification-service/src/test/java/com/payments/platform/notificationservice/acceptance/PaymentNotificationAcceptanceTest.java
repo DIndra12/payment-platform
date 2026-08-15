@@ -32,7 +32,8 @@ class PaymentNotificationAcceptanceTest {
 
     @DynamicPropertySource
     static void overrideKafkaProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.consumer.bootstrap-servers", kafka::getBootstrapServers);
     }
 
     @Autowired
