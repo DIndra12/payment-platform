@@ -12,6 +12,7 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.http.*;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
@@ -31,6 +32,7 @@ import static org.awaitility.Awaitility.await;
 @Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWireMock(port = 0)
+@ActiveProfiles("test")
 class PaymentOrchestrationAcceptanceTest {
 
     @Container
@@ -84,9 +86,9 @@ class PaymentOrchestrationAcceptanceTest {
                         .withBody("{\"decision\": \"APPROVE\"}")));
 
         // Stub Account Service
-        stubFor(post(urlEqualTo("/api/v1/accounts/debit"))
+        stubFor(post(urlMatching("/api/v1/accounts/.*/debit"))
                 .willReturn(aResponse().withStatus(HttpStatus.OK.value())));
-        stubFor(post(urlEqualTo("/api/v1/accounts/credit"))
+        stubFor(post(urlMatching("/api/v1/accounts/.*/credit"))
                 .willReturn(aResponse().withStatus(HttpStatus.OK.value())));
 
         // When

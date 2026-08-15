@@ -78,7 +78,16 @@ public class PaymentOrchestratorService {
                             .build()
             );
 
-            // 4. Complete Payment
+            // 4. Account Credit Step
+            accountClient.creditAccount(
+                    request.getPayeeAccountId().toString(),
+                    DebitRequest.builder()
+                            .amount(request.getAmount())
+                            .referenceId(payment.getId().toString()) // Pass Payment ID for idempotency!
+                            .build()
+            );
+
+            // 5. Complete Payment
             log.info("Payment {} COMPLETED successfully.", payment.getId());
             return updatePaymentState(payment, PaymentStatus.COMPLETED, "Payment successful");
 
