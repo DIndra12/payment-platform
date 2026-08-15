@@ -1,8 +1,9 @@
 package com.payments.platform.paymentservice.outbox;
 
-import com.payments.platform.paymentservice.repository.OutboxEventRepository;
-import com.payments.platform.paymentservice.service.OutboxPublisher;
-import com.payments.platform.paymentservice.service.OutboxSender;
+import com.payments.platform.paymentservice.outbox.OutboxEvent;
+import com.payments.platform.paymentservice.outbox.OutboxEventRepository;
+import com.payments.platform.paymentservice.outbox.OutboxPublisher;
+import com.payments.platform.paymentservice.outbox.OutboxSender;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
