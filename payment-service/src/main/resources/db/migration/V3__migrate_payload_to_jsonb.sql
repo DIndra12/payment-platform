@@ -1,21 +1,14 @@
--- V3: migrate payload column to jsonb if needed
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'outbox_event'
-          AND column_name = 'payload'
-          AND data_type <> 'jsonb'
-    ) THEN
-        -- Cast existing textual payload to jsonb; if payload is already JSON text this will succeed
-        ALTER TABLE outbox_event
-          ALTER COLUMN payload TYPE jsonb
-          USING (CASE WHEN payload IS NULL OR trim(payload) = '' THEN 'null'::jsonb ELSE payload::jsonb END);
-    END IF;
-EXCEPTION WHEN others THEN
-    -- If conversion fails, raise a clear error so migration can be inspected and rolled back
-    RAISE NOTICE 'Could not convert outbox_event.payload to jsonb: %', SQLERRM;
-    RAISE;
-END
-$$;
+-- V3: migrate payload column to jsonb (idempotent plain SQL)
+-- This version avoids PL/pgSQL DO blocks so test tooling and ScriptUtils can execute it.
+-- It will attempt to ALTER the column using a safe casting expression. If payload contains
+-- malformed JSON the statement will fail and the migration will stop so rows can be fixed.
+
+ALTER TABLE IF EXISTS outbox_event
+  ALTER COLUMN payload TYPE jsonb
+  USING (
+    CASE
+      WHEN pg_typeof(payload)::text = 'jsonb' THEN payload
+      WHEN payload IS NULL OR trim(payload::text) = '' THEN 'null'::jsonb
+      ELSE payload::jsonb
+    END
+  );

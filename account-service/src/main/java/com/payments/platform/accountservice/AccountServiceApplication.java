@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EnableJpaRepositories("com.payments.platform.accountservice.repository")
-@EntityScan("com.payments.platform.accountservice.entity")
+@EnableJpaRepositories("com.payments.platform.accountservice.persistence")
+@EntityScan("com.payments.platform.accountservice.ledger")
 public class AccountServiceApplication {
 
     public static void main(String[] args) {
