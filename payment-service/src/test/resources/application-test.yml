@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:tc:postgresql:15.3-alpine:///paymentdb
+    url: ${SPRING_DATASOURCE_URL:}
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: test
-    password: test
+    username: ${SPRING_DATASOURCE_USERNAME:test}
+    password: ${SPRING_DATASOURCE_PASSWORD:test}
   jpa:
     hibernate:
       ddl-auto: none

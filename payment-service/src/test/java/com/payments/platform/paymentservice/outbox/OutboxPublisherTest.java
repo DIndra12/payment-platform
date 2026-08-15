@@ -24,8 +24,6 @@ class OutboxPublisherTest {
     @Autowired
     private OutboxEventRepository repository;
 
-    @MockBean
-    private KafkaTemplate<String, String> kafkaTemplate; // mock Kafka
 
     @Autowired
     private OutboxPublisher publisher;
@@ -41,11 +39,6 @@ class OutboxPublisherTest {
         com.fasterxml.jackson.databind.JsonNode payload = mapper.readTree("{\"amount\":100}");
         event.setPayload(payload);
         repository.save(event);
-
-        // Mock Kafka send always succeeds
-        // return a completed CompletableFuture since publisher ignores the returned future
-        CompletableFuture<SendResult<String, String>> completed = CompletableFuture.completedFuture(null);
-        Mockito.doReturn(completed).when(kafkaTemplate).send(Mockito.anyString(), Mockito.anyString());
 
         // Act
         publisher.publishEvents();
