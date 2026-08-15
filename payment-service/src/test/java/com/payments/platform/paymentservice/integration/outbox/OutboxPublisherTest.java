@@ -1,4 +1,4 @@
-package com.payments.platform.paymentservice.outbox;
+package com.payments.platform.paymentservice.integration.outbox;
 
 import com.payments.platform.paymentservice.outbox.OutboxEvent;
 import com.payments.platform.paymentservice.outbox.OutboxEventRepository;

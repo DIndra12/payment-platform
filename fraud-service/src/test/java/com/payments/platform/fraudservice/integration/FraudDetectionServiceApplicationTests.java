@@ -1,4 +1,4 @@
-package com.payments.platform.fraudservice;
+package com.payments.platform.fraudservice.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

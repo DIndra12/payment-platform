@@ -1,4 +1,4 @@
-package com.payments.platform.paymentservice.outbox;
+package com.payments.platform.paymentservice.integration.outbox;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,4 +1,4 @@
-package com.payments.platform.accountservice;
+package com.payments.platform.accountservice.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,4 +22,3 @@ class AccountServiceApplicationTests {
     void contextLoads() {
     }
 }
-
