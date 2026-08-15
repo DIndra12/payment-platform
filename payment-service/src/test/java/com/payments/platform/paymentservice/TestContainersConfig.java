@@ -39,18 +39,28 @@ public class TestContainersConfig implements BeforeAllCallback {
             String url = POSTGRES_CONTAINER.getJdbcUrl();
             String user = POSTGRES_CONTAINER.getUsername();
             String pass = POSTGRES_CONTAINER.getPassword();
+            String host = POSTGRES_CONTAINER.getHost();
+            int port = POSTGRES_CONTAINER.getFirstMappedPort();
+            String dbName = POSTGRES_CONTAINER.getDatabaseName();
             System.setProperty("spring.datasource.url", url);
             System.setProperty("spring.datasource.username", user);
             System.setProperty("spring.datasource.password", pass);
             System.setProperty("spring.flyway.url", url);
             System.setProperty("spring.flyway.user", user);
             System.setProperty("spring.flyway.password", pass);
+            // Set DB_HOST/DB_PORT/DB_NAME so application.yml placeholders resolve to container values
+            System.setProperty("DB_HOST", host);
+            System.setProperty("DB_PORT", String.valueOf(port));
+            System.setProperty("DB_NAME", dbName);
             registry.add("spring.datasource.url", () -> url);
             registry.add("spring.datasource.username", () -> user);
             registry.add("spring.datasource.password", () -> pass);
             registry.add("spring.flyway.url", () -> url);
             registry.add("spring.flyway.user", () -> user);
             registry.add("spring.flyway.password", () -> pass);
+            registry.add("DB_HOST", () -> host);
+            registry.add("DB_PORT", () -> String.valueOf(port));
+            registry.add("DB_NAME", () -> dbName);
         }
     }
 
