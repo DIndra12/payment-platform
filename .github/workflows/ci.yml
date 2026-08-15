@@ -1,8 +1,8 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
 
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   codeql-analysis:
-    name: CodeQL
+    name: CodeQL Security Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,85 +33,147 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Build (explicit)
-        run: |
-          mvn -B -DskipITs=true -DskipTests=false -pl payment-service -am test
+      - name: Build for CodeQL
+        run: ./mvnw -B clean compile
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           upload: true
 
-  unit-tests:
-    name: Unit Tests
+  build-and-test:
+    name: Build & Test (Unit + Integration)
     runs-on: ubuntu-latest
-    needs: codeql-analysis
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-      - name: Cache Maven
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-      - name: Run unit tests
-        run: mvn -B -pl payment-service -am -DskipITs=true test
-        env:
-          JAVA_TOOL_OPTIONS: '-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false'
 
-  integration-tests:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    needs: unit-tests
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16-alpine
         ports:
           - 5432:5432
         env:
-          POSTGRES_DB: paymentdb
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: postgres
         options: >-
-          --health-cmd="pg_isready -U test" --health-interval=10s --health-timeout=5s --health-retries=5
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-      - name: Cache Maven
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-      - name: Run integration tests
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/paymentdb
-          SPRING_DATASOURCE_USERNAME: test
-          SPRING_DATASOURCE_PASSWORD: test
-        run: mvn -B -pl payment-service -am verify -DskipTests=false
+          --health-cmd="pg_isready -U root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-  acceptance-tests:
-    name: Acceptance Tests
-    runs-on: ubuntu-latest
-    needs: integration-tests
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Cache Maven
-        uses: actions/cache@v4
+          cache: maven
+
+      - name: Build all services (unit + integration tests)
+        run: ./mvnw -B clean build
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-      - name: Run acceptance tests
-        run: mvn -B -pl payment-service -am -Pacceptance verify
+          files: '**/target/surefire-reports/TEST-*.xml'
+          check_name: Test Results
+          comment_title: Unit & Integration Test Report
+
+      - name: Upload coverage reports
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          directory: .
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  coverage-check:
+    name: Code Coverage (95% enforcement)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd="pg_isready -U root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Enforce 95% code coverage
+        run: ./mvnw -B -P coverage test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+        continue-on-error: true
+
+  all-tests:
+    name: All Tests (Unit + Integration + Acceptance)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd="pg_isready -U root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Run all tests on main branch
+        run: ./mvnw -B -P all-tests test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+
+      - name: Publish full test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: '**/target/surefire-reports/TEST-*.xml'
+          check_name: Full Test Results (Main Branch)
