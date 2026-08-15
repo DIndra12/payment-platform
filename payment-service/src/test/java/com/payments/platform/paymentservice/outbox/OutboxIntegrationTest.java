@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@org.junit.jupiter.api.extension.ExtendWith(com.payments.platform.paymentservice.TestContainersConfig.class)
 class OutboxIntegrationTest {
 
     @Autowired

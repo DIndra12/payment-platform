@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@org.junit.jupiter.api.extension.ExtendWith(com.payments.platform.paymentservice.TestContainersConfig.class)
 class OutboxPublisherTest {
 
     @Autowired
