@@ -5,9 +5,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import java.time.LocalDateTime;
 
 @Entity
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 @Getter @Setter
 @Table(name = "outbox_event")
 public class OutboxEvent {
@@ -19,9 +24,9 @@ public class OutboxEvent {
     private String aggregateType;
     private String eventType;
 
+    @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    @jakarta.persistence.Convert(converter = JsonbStringConverter.class)
-    private String payload;
+    private JsonNode payload;
 
     private LocalDateTime createdAt = LocalDateTime.now();
     private boolean published = false;
