@@ -476,7 +476,7 @@ The project uses **Maven profiles** to organize and run different test categorie
 | `integration` | integration + context tests | ~30s | With real database |
 | `acceptance` | full end-to-end tests | ~2m | Before committing |
 | `all-tests` | every test category | ~2m | CI/CD pipeline |
-| `coverage` | run tests + enforce 95% code coverage | ~40s | Code quality check |
+| `coverage` | run tests + enforce 90% code coverage | ~40s | Code quality check |
 
 ### Running Tests Locally
 
@@ -505,11 +505,11 @@ cd payment-platform
 # Starts real PostgreSQL via Testcontainers
 ```
 
-**Code coverage enforcement (95% per package):**
+**Code coverage enforcement (90% per package):**
 ```bash
 ./mvnw -P coverage test
 
-# Runs all tests AND checks that code coverage is ≥ 95%
+# Runs all tests AND checks that code coverage is ≥ 90%
 # on core business packages:
 # - paymentservice.orchestration
 # - paymentservice.client
@@ -520,7 +520,7 @@ cd payment-platform
 # - fraudservice.detection
 # - fraudservice.api
 
-# If coverage is below 95%, the build fails with a detailed report
+# If coverage is below 90%, the build fails with a detailed report
 ```
 
 **All tests:**
