@@ -33,7 +33,8 @@ public class TestContainersConfig implements BeforeAllCallback {
             registry.add("spring.flyway.user", () -> extUser == null ? "test" : extUser);
             registry.add("spring.flyway.password", () -> extPass == null ? "test" : extPass);
         } else {
-            // No external DB provided — use Testcontainers and start it lazily in beforeAll
+            // No external DB provided — start Testcontainers now so DynamicPropertySource exposes a valid JDBC URL
+            POSTGRES_CONTAINER.start();
             registry.add("spring.datasource.url", POSTGRES_CONTAINER::getJdbcUrl);
             registry.add("spring.datasource.username", POSTGRES_CONTAINER::getUsername);
             registry.add("spring.datasource.password", POSTGRES_CONTAINER::getPassword);
