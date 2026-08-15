@@ -22,3 +22,4 @@ class AccountServiceApplicationTests {
     void contextLoads() {
     }
 }
+

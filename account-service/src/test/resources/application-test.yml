@@ -1,16 +1,15 @@
+# account-service/src/test/resources/application-test.yml
+
 spring:
+  # ✅ DO NOT set datasource.url here — @ServiceConnection handles it automatically
   datasource:
-    url: jdbc:postgresql://localhost:5432/accountdb
-    username: testuser
-    password: testpass
-    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
       minimum-idle: 2
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate          # ✅ keep validate — let Flyway create the schema
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
     properties:
@@ -20,14 +19,13 @@ spring:
           batch_size: 20
 
   flyway:
-    enabled: false
+    enabled: true                 # ✅ MUST be true — Flyway creates the tables Hibernate validates
 
 logging:
   level:
     root: WARN
     com.payments.platform: DEBUG
     org.springframework.test: INFO
-    org.springframework.test.context.cache: WARN
 
 server:
-  port: 0
+  port: 0                         # ✅ random port for tests
