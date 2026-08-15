@@ -40,7 +40,7 @@ java -version  # Should show openjdk version "21"
 # 4. Run all tests (unit + integration)
 ./mvnw test
 
-# 5. Start all three services (in separate terminals):
+# 5. Start all services (in separate terminals):
 
 # Terminal 1 - Account Service (Port 8081)
 cd account-service && mvn spring-boot:run
@@ -51,7 +51,10 @@ cd fraud-service && mvn spring-boot:run
 # Terminal 3 - Payment Service (Port 8083)
 cd payment-service && mvn spring-boot:run
 
-# 6. Test a payment (Terminal 4)
+# Terminal 4 - Notification Service (Port 8084)
+cd notification-service && mvn spring-boot:run
+
+# 6. Test a payment (Terminal 5)
 curl -X POST http://localhost:8083/api/v1/payments \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: test-payment-1" \
@@ -145,7 +148,7 @@ This is a **teaching project**, not a toy. Every concept has a real-world reason
      ▼                                        ▼
 ┌──────────────────────────────┐  ┌──────────────────────────────┐
 │   NOTIFICATION SERVICE       │  │ TRANSACTION HISTORY SERVICE  │
-│   (Phase 2 - Consumer Only)  │  │ (Phase 2 - Consumer Only)    │
+│   (Consumer Only)            │  │ (Phase 2 - Consumer Only)    │
 │                              │  │                              │
 │  • Listen to payment events  │  │ • Build denormalized view    │
 │  • Send notifications (SMS)  │  │ • Provide search API         │
@@ -432,7 +435,17 @@ curl http://localhost:8083/actuator/health
 # Should return: {"status":"UP"}
 ```
 
-#### Terminal 4: Test the System
+#### Terminal 4: Notification Service (Port 8084)
+```bash
+cd payment-platform/notification-service
+./mvnw spring-boot:run
+
+# Expected output:
+# Started NotificationServiceApplication in X.XXX seconds
+# Listening on port 8084
+```
+
+#### Terminal 5: Test the System
 
 ```bash
 # Create a payment
@@ -569,8 +582,8 @@ payment-service/src/test/java/
 │   ├── PaymentServiceApplicationTests.java
 │   └── outbox/
 │       ├── OutboxIntegrationTest.java
-│       └── OutboxPublisherTest.java
-└── acceptance/                     # Full end-to-end tests using Testcontainers
+│       └── OutboxPublisherTest.java  # Verifies DB to Kafka publishing
+└── acceptance/                     # Verifies API and orchestration logic
     └── PaymentOrchestrationAcceptanceTest.java
 
 account-service/src/test/java/
@@ -866,7 +879,7 @@ payment-platform/                   # Root project (Maven aggregator)
 ## Next Phases
 
 ### Phase 2: Complete Infrastructure
-- [ ] **Notification Service** — Kafka consumer for payment.completed events
+- [x] **Notification Service** — Kafka consumer for payment.completed events
 - [ ] **Transaction History Service** — CQRS read model from multiple Kafka topics
 - [ ] **OpenTelemetry Integration** — Distributed tracing across services
 - [ ] **Prometheus & Grafana** — Metrics and dashboards
