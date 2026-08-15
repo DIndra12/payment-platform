@@ -19,8 +19,12 @@ public class TestContainersConfig implements BeforeAllCallback {
         POSTGRES_CONTAINER.start();
         // Run Flyway programmatically against the container so migrations in src/main/resources/db/migration are applied for tests
         try {
+            String jdbcUrl = POSTGRES_CONTAINER.getJdbcUrl();
+            // strip query params if present (some JDBC URLs include loggerLevel), Flyway needs plain URL
+            int q = jdbcUrl.indexOf('?');
+            if (q > 0) jdbcUrl = jdbcUrl.substring(0, q);
             org.flywaydb.core.Flyway flyway = org.flywaydb.core.Flyway.configure()
-                    .dataSource(POSTGRES_CONTAINER.getJdbcUrl(), POSTGRES_CONTAINER.getUsername(), POSTGRES_CONTAINER.getPassword())
+                    .dataSource(jdbcUrl, POSTGRES_CONTAINER.getUsername(), POSTGRES_CONTAINER.getPassword())
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)
                     .load();
