@@ -12,18 +12,18 @@ import java.util.List;
 public class OutboxPublisher {
 
     private final OutboxEventRepository repository;
-    private final KafkaOperations<String, String> kafkaOperations;
+    private final OutboxSender outboxSender;
 
-    public OutboxPublisher(OutboxEventRepository repository, KafkaOperations<String, String> kafkaOperations) {
+    public OutboxPublisher(OutboxEventRepository repository, OutboxSender outboxSender) {
         this.repository = repository;
-        this.kafkaOperations = kafkaOperations;
+        this.outboxSender = outboxSender;
     }
 
     @Scheduled(fixedDelay = 5000) // every 5 seconds
     public void publishEvents() {
         List<OutboxEvent> events = repository.findByPublishedFalse();
         for (OutboxEvent event : events) {
-            kafkaOperations.send(event.getEventType(), event.getPayload().toString());
+            outboxSender.send(event.getEventType(), event.getPayload().toString());
             event.setPublished(true);
             repository.save(event);
         }
