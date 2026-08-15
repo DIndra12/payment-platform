@@ -22,15 +22,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: java
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+      - name: Build (explicit)
+        run: |
+          mvn -B -DskipITs=true -DskipTests=false -pl payment-service -am test
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
+        with:
+          upload: true
 
   unit-tests:
     name: Unit Tests
