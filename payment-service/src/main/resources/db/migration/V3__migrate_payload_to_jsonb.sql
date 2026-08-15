@@ -5,4 +5,10 @@
 
 ALTER TABLE IF EXISTS outbox_event
   ALTER COLUMN payload TYPE jsonb
-  USING (CASE WHEN payload IS NULL OR trim(payload) = '' THEN 'null'::jsonb ELSE payload::jsonb END);
+  USING (
+    CASE
+      WHEN pg_typeof(payload)::text = 'jsonb' THEN payload
+      WHEN payload IS NULL OR trim(payload::text) = '' THEN 'null'::jsonb
+      ELSE payload::jsonb
+    END
+  );
