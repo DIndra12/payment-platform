@@ -33,6 +33,9 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       - name: Build for CodeQL
         run: ./mvnw -B clean compile
 
@@ -72,6 +75,9 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
       - name: Build all services (unit + integration tests)
         run: ./mvnw -B clean build
         env:
@@ -97,7 +103,7 @@ jobs:
           fail_ci_if_error: false
 
   coverage-check:
-    name: Code Coverage (95% enforcement)
+    name: Code Coverage (90% enforcement)
     runs-on: ubuntu-latest
     needs: build-and-test
 
@@ -126,7 +132,10 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Enforce 95% code coverage
+      - name: Make mvnw executable
+        run: chmod +x mvnw
+
+      - name: Enforce 90% code coverage
         run: ./mvnw -B -P coverage test
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
@@ -163,6 +172,9 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
           cache: maven
+
+      - name: Make mvnw executable
+        run: chmod +x mvnw
 
       - name: Run all tests on main branch
         run: ./mvnw -B -P all-tests test
