@@ -30,6 +30,12 @@ services:
   fraud-service:
     url: http://localhost:8082
 
+external-services:
+  account-service:
+    url: http://localhost:8081
+  fraud-service:
+    url: http://localhost:8082
+
 logging:
   level:
     root: WARN
