@@ -1,5 +1,6 @@
 package com.payments.platform.paymentservice.orchestration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payments.platform.paymentservice.client.AccountClient;
 import com.payments.platform.paymentservice.client.FraudClient;
 import com.payments.platform.paymentservice.client.dto.DebitRequest;
@@ -8,11 +9,16 @@ import com.payments.platform.paymentservice.client.dto.FraudCheckResponse;
 import com.payments.platform.paymentservice.client.dto.RiskDecision;
 import com.payments.platform.paymentservice.api.PaymentRequest;
 import com.payments.platform.paymentservice.api.PaymentResponse;
+import com.payments.platform.paymentservice.outbox.OutboxEvent;
+import com.payments.platform.paymentservice.outbox.OutboxEventRepository;
 import com.payments.platform.paymentservice.persistence.entity.Payment;
 import com.payments.platform.paymentservice.persistence.PaymentRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -22,16 +28,11 @@ public class PaymentOrchestratorService {
     private final PaymentRepository paymentRepository;
     private final FraudClient fraudClient;
     private final AccountClient accountClient;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
-    /**
-     * Process a payment request idempotently.
-     *
-     * @param request payment details
-     * @param idempotencyKey unique identifier; if a payment with this key exists, return its result
-     * @return payment response (202 Accepted on success, with payment ID and status)
-     */
+    @Transactional
     public PaymentResponse processPayment(PaymentRequest request, String idempotencyKey) {
-        // 1. Idempotency check: if we've seen this key before, return the existing result
         var existingPayment = paymentRepository.findByIdempotencyKey(idempotencyKey);
         if (existingPayment.isPresent()) {
             log.info("Idempotent retry detected for key: {}. Returning existing payment ID: {}",
@@ -39,7 +40,6 @@ public class PaymentOrchestratorService {
             return mapToResponse(existingPayment.get());
         }
 
-        // 2. Initialize Payment in Database
         Payment payment = Payment.builder()
                 .idempotencyKey(idempotencyKey)
                 .payerAccountId(request.getPayerAccountId())
@@ -53,7 +53,6 @@ public class PaymentOrchestratorService {
         log.info("Payment INITIATED with ID: {} (idempotency key: {})", payment.getId(), idempotencyKey);
 
         try {
-            // 2. Fraud Check Step
             FraudCheckResponse fraudResponse = fraudClient.evaluateRisk(
                     FraudCheckRequest.builder()
                             .payerAccountId(request.getPayerAccountId().toString())
@@ -64,21 +63,26 @@ public class PaymentOrchestratorService {
 
             if (fraudResponse.decision() == RiskDecision.REJECT) {
                 String reason = String.join(", ", fraudResponse.reasons());
-                log.warn("Payment {} rejected by Fraud Service (risk score: {}). Reasons: {}",
-                        payment.getId(), fraudResponse.riskScore(), reason);
+                log.warn("Payment {} rejected by Fraud Service. Reasons: {}", payment.getId(), reason);
                 return updatePaymentState(payment, PaymentStatus.REJECTED_BY_FRAUD, reason);
             }
 
-            // 3. Account Debit Step
             accountClient.debitAccount(
                     request.getPayerAccountId().toString(),
                     DebitRequest.builder()
                             .amount(request.getAmount())
-                            .referenceId(payment.getId().toString()) // Pass Payment ID for idempotency!
+                            .referenceId(payment.getId().toString())
                             .build()
             );
 
-            // 4. Complete Payment
+            accountClient.creditAccount(
+                    request.getPayeeAccountId().toString(),
+                    DebitRequest.builder()
+                            .amount(request.getAmount())
+                            .referenceId(payment.getId().toString())
+                            .build()
+            );
+
             log.info("Payment {} COMPLETED successfully.", payment.getId());
             return updatePaymentState(payment, PaymentStatus.COMPLETED, "Payment successful");
 
@@ -92,7 +96,34 @@ public class PaymentOrchestratorService {
         payment.setStatus(newStatus);
         payment.setFailureReason(reason);
         paymentRepository.save(payment);
+
+        if (newStatus == PaymentStatus.COMPLETED) {
+            createOutboxEvent(payment);
+        }
+
         return mapToResponse(payment);
+    }
+
+    private void createOutboxEvent(Payment payment) {
+        try {
+            Map<String, Object> eventPayload = Map.of(
+                    "paymentId", payment.getId(),
+                    "payerAccountId", payment.getPayerAccountId(),
+                    "payeeAccountId", payment.getPayeeAccountId(),
+                    "amount", payment.getAmount(),
+                    "currency", payment.getCurrency()
+            );
+
+            OutboxEvent outboxEvent = new OutboxEvent();
+            outboxEvent.setAggregateType("payment");
+            outboxEvent.setAggregateId(payment.getId().toString());
+            outboxEvent.setEventType("payment.completed");
+            outboxEvent.setPayload(objectMapper.valueToTree(eventPayload));
+            outboxEventRepository.save(outboxEvent);
+            log.info("Outbox event created for payment {}", payment.getId());
+        } catch (Exception e) {
+            log.error("Failed to create outbox event for payment {}", payment.getId(), e);
+        }
     }
 
     private PaymentResponse mapToResponse(Payment payment) {

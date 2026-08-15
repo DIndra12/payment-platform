@@ -10,4 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface AccountClient {
     @PostMapping("/api/v1/accounts/{accountId}/debit")
     void debitAccount(@PathVariable("accountId") String accountId, @RequestBody DebitRequest request);
+
+    @PostMapping("/api/v1/accounts/{accountId}/credit")
+    void creditAccount(@PathVariable("accountId") String accountId, @RequestBody DebitRequest request);
 }

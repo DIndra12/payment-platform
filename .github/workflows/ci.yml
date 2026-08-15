@@ -143,25 +143,10 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: root
         continue-on-error: true
 
-  all-tests:
-    name: All Tests (Unit + Integration + Acceptance)
+  acceptance-tests:
+    name: Acceptance Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: root
-          POSTGRES_PASSWORD: root
-          POSTGRES_DB: postgres
-        options: >-
-          --health-cmd="pg_isready -U root"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    needs: [build-and-test, coverage-check]
 
     steps:
       - uses: actions/checkout@v4
@@ -176,16 +161,13 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Run all tests on main branch
-        run: ./mvnw -B -P all-tests test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
+      - name: Run Acceptance Tests
+        run: ./mvnw -B -P acceptance test
 
-      - name: Publish full test results
+      - name: Publish Acceptance Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: '**/target/surefire-reports/TEST-*.xml'
-          check_name: Full Test Results (Main Branch)
+          check_name: Acceptance Test Results
+          comment_title: Acceptance Test Report
