@@ -37,7 +37,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build for CodeQL
-        run: ./mvnw -B clean compile
+        run: ./mvnw -B clean verify
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
@@ -79,7 +79,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build all services (unit + integration tests)
-        run: ./mvnw -B clean build
+        run: ./mvnw -B clean verify
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
           SPRING_DATASOURCE_USERNAME: root
