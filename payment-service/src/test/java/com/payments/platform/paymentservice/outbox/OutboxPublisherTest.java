@@ -40,8 +40,9 @@ class OutboxPublisherTest {
         repository.save(event);
 
         // Mock Kafka send always succeeds
-        Mockito.when(kafkaTemplate.send(Mockito.anyString(), Mockito.anyString()))
-                .thenReturn((CompletableFuture<SendResult<String, String>>) Mockito.mock(ListenableFuture.class));
+        // return a completed CompletableFuture since publisher ignores the returned future
+        CompletableFuture<SendResult<String, String>> completed = CompletableFuture.completedFuture(null);
+        Mockito.doReturn(completed).when(kafkaTemplate).send(Mockito.anyString(), Mockito.anyString());
 
         // Act
         publisher.publishEvents();

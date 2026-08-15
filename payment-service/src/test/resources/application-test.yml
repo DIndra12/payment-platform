@@ -1,13 +1,12 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:payment_test;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:tc:postgresql:15.3-alpine:///paymentdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
   jpa:
     hibernate:
-      ddl-auto: none
-    database-platform: org.hibernate.dialect.H2Dialect
+      ddl-auto: create-drop
     show-sql: false
   flyway:
     enabled: false
