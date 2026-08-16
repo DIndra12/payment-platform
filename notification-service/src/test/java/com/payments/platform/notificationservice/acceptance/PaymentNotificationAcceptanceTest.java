@@ -16,7 +16,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.mockito.Mockito.timeout;
@@ -46,15 +46,17 @@ class PaymentNotificationAcceptanceTest {
     void shouldReceivePaymentCompletedEventAndTriggerNotification() {
         // Given
         var topic = "payment.completed";
-        var event = new PaymentCompletedEvent(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                BigDecimal.valueOf(250.75),
-                "GBP",
-                Instant.now()
-        );
+        var event = PaymentCompletedEvent.builder()
+                .eventId(UUID.randomUUID())
+                .paymentId(UUID.randomUUID())
+                .payerAccountId(UUID.randomUUID())
+                .payeeAccountId(UUID.randomUUID())
+                .amount(BigDecimal.valueOf(250.75))
+                .currency("GBP")
+                .status("COMPLETED")
+                .occurredAt(LocalDateTime.now())
+                .traceId(UUID.randomUUID().toString())
+                .build();
 
         // When
         kafkaTemplate.send(topic, event);
