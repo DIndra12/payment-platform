@@ -1129,3 +1129,4 @@ This is a learning project. Questions or improvements?
 - **Design Document:** See `payments-microservices-design.md` for architectural decisions
 
 ---
+
