@@ -10,7 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.mockito.Mockito.verify;
@@ -27,15 +27,17 @@ class PaymentCompletedConsumerTest {
     @Test
     void shouldConsumePaymentCompletedEventAndSendNotification() {
         // Given
-        var event = new PaymentCompletedEvent(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                BigDecimal.TEN,
-                "USD",
-                Instant.now()
-        );
+        var event = PaymentCompletedEvent.builder()
+                .eventId(UUID.randomUUID())
+                .paymentId(UUID.randomUUID())
+                .payerAccountId(UUID.randomUUID())
+                .payeeAccountId(UUID.randomUUID())
+                .amount(BigDecimal.TEN)
+                .currency("USD")
+                .status("COMPLETED")
+                .occurredAt(LocalDateTime.now())
+                .traceId(UUID.randomUUID().toString())
+                .build();
 
         // When
         paymentCompletedConsumer.consume(event);

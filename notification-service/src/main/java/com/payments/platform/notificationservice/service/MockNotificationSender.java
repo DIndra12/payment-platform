@@ -14,10 +14,10 @@ public class MockNotificationSender implements NotificationSender {
     public void sendNotification(PaymentCompletedEvent event) {
         // Simulate sending a notification
         logger.info("Sending notification for payment {}: Payer {}, Payee {}, Amount {} {}",
-                event.paymentId(),
-                event.payerAccountId(),
-                event.payeeAccountId(),
-                event.amount(),
-                event.currency());
+                event.getPaymentId(),
+                event.getPayerAccountId(),
+                event.getPayeeAccountId(),
+                event.getAmount(),
+                event.getCurrency());
     }
 }

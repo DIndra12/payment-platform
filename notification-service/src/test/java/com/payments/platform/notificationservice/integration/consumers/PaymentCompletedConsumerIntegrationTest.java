@@ -10,7 +10,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.mockito.Mockito.timeout;
@@ -30,15 +30,17 @@ class PaymentCompletedConsumerIntegrationTest {
     void shouldConsumePaymentCompletedEventFromKafka() {
         // Given
         var topic = "payment.completed";
-        var event = new PaymentCompletedEvent(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                BigDecimal.valueOf(100.50),
-                "EUR",
-                Instant.now()
-        );
+        var event = PaymentCompletedEvent.builder()
+                .eventId(UUID.randomUUID())
+                .paymentId(UUID.randomUUID())
+                .payerAccountId(UUID.randomUUID())
+                .payeeAccountId(UUID.randomUUID())
+                .amount(BigDecimal.valueOf(100.50))
+                .currency("EUR")
+                .status("COMPLETED")
+                .occurredAt(LocalDateTime.now())
+                .traceId(UUID.randomUUID().toString())
+                .build();
 
         // When
         kafkaTemplate.send(topic, event);
