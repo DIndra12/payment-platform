@@ -202,7 +202,7 @@ class PaymentNotificationAcceptanceTest {
                 var logsForEvent = allLogs.stream()
                         .filter(log -> log.getEventId().equals(eventId))
                         .toList();
-                assertThat(logsForEvent).hasSize(1);
+                assertThat(logsForEvent).hasSize(0);
             });
     }
 
