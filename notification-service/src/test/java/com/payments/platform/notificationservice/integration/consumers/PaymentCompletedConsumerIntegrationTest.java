@@ -1,11 +1,13 @@
 package com.payments.platform.notificationservice.integration.consumers;
 
+import com.payments.platform.notificationservice.config.TestKafkaConfig;
 import com.payments.platform.notificationservice.dto.PaymentCompletedEvent;
 import com.payments.platform.notificationservice.service.NotificationSender;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -24,6 +26,7 @@ import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Testcontainers
+@Import(TestKafkaConfig.class)
 class PaymentCompletedConsumerIntegrationTest {
 
     @Container

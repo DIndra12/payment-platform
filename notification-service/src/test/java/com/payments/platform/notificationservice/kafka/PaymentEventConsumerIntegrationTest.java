@@ -1,5 +1,6 @@
 package com.payments.platform.notificationservice.kafka;
 
+import com.payments.platform.notificationservice.config.TestKafkaConfig;
 import com.payments.platform.notificationservice.dto.PaymentCompletedEvent;
 import com.payments.platform.notificationservice.dto.PaymentFailedEvent;
 import com.payments.platform.notificationservice.entity.NotificationStatus;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -27,6 +29,7 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @Testcontainers
+@Import(TestKafkaConfig.class)
 class PaymentEventConsumerIntegrationTest {
 
     @Container
