@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -27,12 +27,6 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @Testcontainers
-@DirtiesContext
-@EmbeddedKafka(
-        partitions = 1,
-        topics = {"payment.completed", "payment.failed"},
-        brokerProperties = {"listeners=PLAINTEXT://localhost:9093", "port=9093"}
-)
 class PaymentEventConsumerIntegrationTest {
 
     @Container
@@ -41,18 +35,17 @@ class PaymentEventConsumerIntegrationTest {
             .withUsername("test")
             .withPassword("test");
 
+    @Container
+    static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1"));
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.kafka.bootstrap-servers", () -> "localhost:9093");
-        registry.add("spring.kafka.consumer.bootstrap-servers", () -> "localhost:9093");
-        registry.add("spring.kafka.producer.bootstrap-servers", () -> "localhost:9093");
-        registry.add("spring.kafka.consumer.group-id", () -> "notification-service-test");
-        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
-        registry.add("spring.kafka.consumer.properties.spring.json.trusted.packages", () -> "*");
-        registry.add("spring.kafka.producer.properties.spring.json.trusted.packages", () -> "*");
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.consumer.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
     }
 
     @Autowired
@@ -92,7 +85,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert
         await()
-                .atMost(Duration.ofSeconds(10))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     var notificationLog = notificationLogRepository.findByEventId(eventId);
                     assertThat(notificationLog).isPresent();
@@ -125,7 +118,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert
         await()
-                .atMost(Duration.ofSeconds(10))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     var notificationLog = notificationLogRepository.findByEventId(eventId);
                     assertThat(notificationLog).isPresent();
@@ -159,7 +152,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert - Should only have one notification log
         await()
-                .atMost(Duration.ofSeconds(10))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     var allLogs = notificationLogRepository.findAll();
                     var logsForEvent = allLogs.stream()
@@ -194,7 +187,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert - Should only have one notification log
         await()
-                .atMost(Duration.ofSeconds(10))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     var allLogs = notificationLogRepository.findAll();
                     var logsForEvent = allLogs.stream()
@@ -222,7 +215,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert
         await()
-                .atMost(Duration.ofSeconds(15))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     var allLogs = notificationLogRepository.findAll();
                     assertThat(allLogs).hasSizeGreaterThanOrEqualTo(3);
@@ -248,7 +241,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert
         await()
-                .atMost(Duration.ofSeconds(15))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     assertThat(notificationLogRepository.existsByEventId(eventId1)).isTrue();
                     assertThat(notificationLogRepository.existsByEventId(eventId2)).isTrue();
@@ -371,7 +364,7 @@ class PaymentEventConsumerIntegrationTest {
 
         // Assert
         await()
-                .atMost(Duration.ofSeconds(15))
+                .atMost(Duration.ofSeconds(20))
                 .untilAsserted(() -> {
                     assertThat(notificationLogRepository.existsByEventId(completedEventId)).isTrue();
                     assertThat(notificationLogRepository.existsByEventId(failedEventId)).isTrue();
