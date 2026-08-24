@@ -70,23 +70,42 @@ class NotificationServiceTest {
     @Test
     void handlePaymentCompleted_ShouldSaveNotification_WhenEventIsNew() {
         // Arrange
+        NotificationLog[] savedInstances = new NotificationLog[2];
         when(notificationLogRepository.existsByEventId(paymentCompletedEvent.getEventId())).thenReturn(false);
-        when(notificationLogRepository.save(any(NotificationLog.class))).thenAnswer(i -> i.getArgument(0));
+        when(notificationLogRepository.save(any(NotificationLog.class))).thenAnswer(i -> {
+            NotificationLog arg = i.getArgument(0);
+            if (savedInstances[0] == null) {
+                // First save - capture the initial object
+                NotificationLog copy = new NotificationLog();
+                copy.setEventId(arg.getEventId());
+                copy.setPaymentId(arg.getPaymentId());
+                copy.setNotificationType(arg.getNotificationType());
+                copy.setStatus(arg.getStatus());
+                copy.setRecipient(arg.getRecipient());
+                copy.setSubject(arg.getSubject());
+                copy.setMessage(arg.getMessage());
+                copy.setRetryCount(arg.getRetryCount());
+                savedInstances[0] = copy;
+            } else {
+                // Second save - capture the updated object
+                savedInstances[1] = arg;
+            }
+            return arg;
+        });
 
         // Act
         notificationService.handlePaymentCompleted(paymentCompletedEvent);
 
         // Assert
-        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
-        verify(notificationLogRepository, times(2)).save(captor.capture());
+        verify(notificationLogRepository, times(2)).save(any(NotificationLog.class));
 
-        NotificationLog firstSave = captor.getAllValues().get(0);
+        NotificationLog firstSave = savedInstances[0];
         assertThat(firstSave.getEventId()).isEqualTo(paymentCompletedEvent.getEventId());
         assertThat(firstSave.getPaymentId()).isEqualTo(paymentCompletedEvent.getPaymentId());
         assertThat(firstSave.getNotificationType()).isEqualTo(NotificationType.PAYMENT_COMPLETED);
         assertThat(firstSave.getStatus()).isEqualTo(NotificationStatus.PENDING);
 
-        NotificationLog secondSave = captor.getAllValues().get(1);
+        NotificationLog secondSave = savedInstances[1];
         assertThat(secondSave.getStatus()).isEqualTo(NotificationStatus.SENT);
         assertThat(secondSave.getSentAt()).isNotNull();
     }
@@ -141,13 +160,20 @@ class NotificationServiceTest {
         // Arrange
         when(notificationLogRepository.existsByEventId(paymentCompletedEvent.getEventId())).thenReturn(false);
         when(notificationLogRepository.save(any(NotificationLog.class)))
-                .thenThrow(new RuntimeException("Database connection failed"));
+                .thenThrow(new RuntimeException("Database connection failed"))
+                .thenAnswer(i -> i.getArgument(0)); // Failed notification save succeeds
 
         // Act
         notificationService.handlePaymentCompleted(paymentCompletedEvent);
 
-        // Assert - Should still try to save (throws on first save, then saves failed notification)
-        verify(notificationLogRepository, times(2)).save(any(NotificationLog.class));
+        // Assert - Should save failed notification after exception
+        ArgumentCaptor<NotificationLog> captor = ArgumentCaptor.forClass(NotificationLog.class);
+        verify(notificationLogRepository, times(2)).save(captor.capture());
+        
+        // Second save should be the failed notification
+        NotificationLog failedLog = captor.getAllValues().get(1);
+        assertThat(failedLog.getStatus()).isEqualTo(NotificationStatus.FAILED);
+        assertThat(failedLog.getErrorMessage()).contains("Database connection failed");
     }
 
     @Test
