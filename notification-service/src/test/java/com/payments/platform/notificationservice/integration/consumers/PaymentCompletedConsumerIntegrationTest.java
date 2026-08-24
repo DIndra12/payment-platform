@@ -5,6 +5,7 @@ import com.payments.platform.notificationservice.dto.PaymentCompletedEvent;
 import com.payments.platform.notificationservice.service.NotificationSender;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -51,6 +52,7 @@ class PaymentCompletedConsumerIntegrationTest {
     }
 
     @Autowired
+    @Qualifier("kafkaTemplateCompleted")
     private KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
 
     @MockBean

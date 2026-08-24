@@ -8,6 +8,7 @@ import com.payments.platform.notificationservice.repository.NotificationLogRepos
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -55,9 +56,11 @@ class PaymentNotificationAcceptanceTest {
     }
 
     @Autowired
+    @Qualifier("kafkaTemplateCompleted")
     private KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
 
     @Autowired
+    @Qualifier("kafkaTemplateFailed")
     private KafkaTemplate<String, PaymentFailedEvent> kafkaTemplateForFailedEvents;
 
     @Autowired
