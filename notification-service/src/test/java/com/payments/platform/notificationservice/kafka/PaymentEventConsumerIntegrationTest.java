@@ -49,6 +49,10 @@ class PaymentEventConsumerIntegrationTest {
         registry.add("spring.kafka.bootstrap-servers", () -> "localhost:9093");
         registry.add("spring.kafka.consumer.bootstrap-servers", () -> "localhost:9093");
         registry.add("spring.kafka.producer.bootstrap-servers", () -> "localhost:9093");
+        registry.add("spring.kafka.consumer.group-id", () -> "notification-service-test");
+        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
+        registry.add("spring.kafka.consumer.properties.spring.json.trusted.packages", () -> "*");
+        registry.add("spring.kafka.producer.properties.spring.json.trusted.packages", () -> "*");
     }
 
     @Autowired
