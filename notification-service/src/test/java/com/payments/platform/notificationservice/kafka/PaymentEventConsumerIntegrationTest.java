@@ -49,6 +49,8 @@ class PaymentEventConsumerIntegrationTest {
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
         registry.add("spring.kafka.consumer.bootstrap-servers", kafka::getBootstrapServers);
         registry.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.consumer.group-id", () -> "notification-service-test");
+        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
     }
 
     @Autowired

@@ -21,7 +21,10 @@ public class PaymentEventConsumer {
         this.notificationService = notificationService;
     }
 
-    @KafkaListener(topics = "payment.completed", groupId = "notification-service")
+    @KafkaListener(
+            topics = "payment.completed",
+            groupId = "notification-service",
+            containerFactory = "paymentCompletedListenerContainerFactory")
     public void consumePaymentCompleted(
             @Payload PaymentCompletedEvent event,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
@@ -46,7 +49,10 @@ public class PaymentEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "payment.failed", groupId = "notification-service")
+    @KafkaListener(
+            topics = "payment.failed",
+            groupId = "notification-service",
+            containerFactory = "paymentFailedListenerContainerFactory")
     public void consumePaymentFailed(
             @Payload PaymentFailedEvent event,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
