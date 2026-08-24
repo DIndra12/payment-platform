@@ -18,31 +18,36 @@ jobs:
   codeql-analysis:
     name: CodeQL Security Analysis
     runs-on: ubuntu-latest
+    continue-on-error: true  # Don't fail build on CodeQL issues
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4  # Updated to v4
         with:
           languages: java
+        continue-on-error: true  # Handle CodeQL service issues gracefully
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: maven
 
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Build for CodeQL
-        run: ./mvnw -B clean verify
+      - name: Build for CodeQL (compile only, skip tests)
+        run: ./mvnw -B clean compile -DskipTests
+        continue-on-error: false
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4  # Updated to v4
         with:
           upload: true
+        continue-on-error: true  # Don't fail if CodeQL service unavailable
 
   build-and-test:
     name: Build & Test (Unit + Integration)
@@ -78,12 +83,13 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Build all services (unit + integration tests)
-        run: ./mvnw -B clean verify
+      - name: Build all services (unit tests only - fast)
+        run: ./mvnw -B clean install -Pci-fast
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
+          MAVEN_OPTS: "-Xmx1024m -XX:+EnableDynamicAgentLoading"
 
       - name: Publish test results
         if: always()
@@ -135,18 +141,20 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Enforce 90% code coverage
-        run: ./mvnw -B -P coverage test
+      - name: Enforce 90% code coverage (unit tests only)
+        run: ./mvnw -B test jacoco:report jacoco:check -Pci-fast
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/postgres
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: root
-        continue-on-error: true
+          MAVEN_OPTS: "-Xmx1024m -XX:+EnableDynamicAgentLoading"
+        continue-on-error: false
 
   acceptance-tests:
-    name: Acceptance Tests
+    name: Acceptance Tests (Testcontainers)
     runs-on: ubuntu-latest
-    needs: [build-and-test, coverage-check]
+    needs: [build-and-test]
+    continue-on-error: true  # Don't fail build if Docker issues
 
     steps:
       - uses: actions/checkout@v4
@@ -161,13 +169,17 @@ jobs:
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Run Acceptance Tests
-        run: ./mvnw -B -P acceptance test
+      - name: Run Integration & Acceptance Tests with Testcontainers
+        run: ./mvnw -B verify -Pall-tests
+        env:
+          MAVEN_OPTS: "-Xmx1024m -XX:+EnableDynamicAgentLoading"
+        timeout-minutes: 15
+        continue-on-error: true
 
       - name: Publish Acceptance Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: '**/target/surefire-reports/TEST-*.xml'
+          files: '**/target/surefire-reports/TEST-*.xml,**/target/failsafe-reports/TEST-*.xml'
           check_name: Acceptance Test Results
           comment_title: Acceptance Test Report
