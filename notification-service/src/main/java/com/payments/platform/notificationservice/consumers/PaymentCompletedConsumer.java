@@ -17,7 +17,10 @@ public class PaymentCompletedConsumer {
         this.notificationSender = notificationSender;
     }
 
-    @KafkaListener(topics = "payment.completed")
+    @KafkaListener(
+            topics = "payment.completed",
+            groupId = "notification-sender",
+            containerFactory = "paymentCompletedListenerContainerFactory")
     public void consume(PaymentCompletedEvent event) {
         logger.info("Received payment completed event: {}", event);
         notificationSender.sendNotification(event);

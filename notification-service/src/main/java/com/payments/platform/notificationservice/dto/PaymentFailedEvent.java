@@ -9,7 +9,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentCompletedEvent {
+public class PaymentFailedEvent {
     private UUID eventId;
     private UUID paymentId;
     private UUID payerAccountId;
@@ -17,6 +17,7 @@ public class PaymentCompletedEvent {
     private BigDecimal amount;
     private String currency;
     private String status;
+    private String failureReason;
     private LocalDateTime occurredAt;
     private String traceId;
 }

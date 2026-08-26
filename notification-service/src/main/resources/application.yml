@@ -1,19 +1,49 @@
+﻿server:
+  port: 8084
+
 spring:
   application:
     name: notification-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/notification_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   kafka:
+    bootstrap-servers: localhost:9094
     consumer:
-      bootstrap-servers: localhost:9092
       group-id: notification-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
     producer:
-      bootstrap-servers: localhost:9092
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.type.mapping: payment-completed:com.payments.platform.notificationservice.dto.PaymentCompletedEvent,payment-failed:com.payments.platform.notificationservice.dto.PaymentFailedEvent
+    listener:
+      ack-mode: manual
+      
 
-server:
-  port: 8084
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+logging:
+  level:
+    com.payments.platform.notificationservice: INFO
+    org.springframework.kafka: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
