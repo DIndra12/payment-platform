@@ -16,14 +16,23 @@ import com.payments.platform.paymentservice.persistence.PaymentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentOrchestratorService {
+
+    /** Event type doubles as the Kafka topic name in {@code OutboxPublisher}. */
+    private static final String EVENT_PAYMENT_COMPLETED = "payment.completed";
+    private static final String EVENT_PAYMENT_FAILED = "payment.failed";
 
     private final PaymentRepository paymentRepository;
     private final FraudClient fraudClient;
@@ -97,32 +106,56 @@ public class PaymentOrchestratorService {
         payment.setFailureReason(reason);
         paymentRepository.save(payment);
 
+        // Every terminal state produces an event. Publishing only the happy path
+        // left failed payments invisible to every downstream consumer, which made
+        // "why did my payment not go through" unanswerable from the read model.
         if (newStatus == PaymentStatus.COMPLETED) {
-            createOutboxEvent(payment);
+            createOutboxEvent(payment, EVENT_PAYMENT_COMPLETED);
+        } else if (newStatus == PaymentStatus.FAILED || newStatus == PaymentStatus.REJECTED_BY_FRAUD) {
+            createOutboxEvent(payment, EVENT_PAYMENT_FAILED);
         }
 
         return mapToResponse(payment);
     }
 
-    private void createOutboxEvent(Payment payment) {
+    private void createOutboxEvent(Payment payment, String eventType) {
         try {
-            Map<String, Object> eventPayload = Map.of(
-                    "paymentId", payment.getId(),
-                    "payerAccountId", payment.getPayerAccountId(),
-                    "payeeAccountId", payment.getPayeeAccountId(),
-                    "amount", payment.getAmount(),
-                    "currency", payment.getCurrency()
-            );
+            // LinkedHashMap rather than Map.of: field order is then stable, and
+            // null values (failureReason on a completed payment) are permitted.
+            Map<String, Object> eventPayload = new LinkedHashMap<>();
+            // eventId gives consumers a stable dedupe key. Without it they are
+            // forced to dedupe on (aggregateId, eventType).
+            eventPayload.put("eventId", UUID.randomUUID().toString());
+            eventPayload.put("paymentId", payment.getId());
+            eventPayload.put("payerAccountId", payment.getPayerAccountId());
+            eventPayload.put("payeeAccountId", payment.getPayeeAccountId());
+            eventPayload.put("amount", payment.getAmount());
+            eventPayload.put("currency", payment.getCurrency());
+            eventPayload.put("status", payment.getStatus().name());
+            // ISO_LOCAL_DATE_TIME (no zone suffix) so consumers can bind straight to
+            // LocalDateTime, which is what every entity on this platform uses. The
+            // design doc's example shows a trailing 'Z'; that would not deserialize
+            // into LocalDateTime without extra consumer configuration.
+            eventPayload.put("occurredAt", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            // Populated once OpenTelemetry is wired up; null until then.
+            eventPayload.put("traceId", MDC.get("traceId"));
+
+            if (EVENT_PAYMENT_FAILED.equals(eventType)) {
+                eventPayload.put("failureReason", payment.getFailureReason());
+            }
 
             OutboxEvent outboxEvent = new OutboxEvent();
             outboxEvent.setAggregateType("payment");
             outboxEvent.setAggregateId(payment.getId().toString());
-            outboxEvent.setEventType("payment.completed");
+            outboxEvent.setEventType(eventType);
             outboxEvent.setPayload(objectMapper.valueToTree(eventPayload));
             outboxEventRepository.save(outboxEvent);
-            log.info("Outbox event created for payment {}", payment.getId());
+            log.info("Outbox event {} created for payment {}", eventType, payment.getId());
         } catch (Exception e) {
-            log.error("Failed to create outbox event for payment {}", payment.getId(), e);
+            // Swallowed deliberately: failing here would roll back a payment whose
+            // money has already moved. The cost is that a lost outbox row means a
+            // silently missing event, so this log line is worth alerting on.
+            log.error("Failed to create outbox event {} for payment {}", eventType, payment.getId(), e);
         }
     }
 

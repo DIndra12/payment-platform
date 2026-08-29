@@ -1,0 +1,24 @@
+# Test profile. Datasource and Kafka bootstrap are overridden per test class via
+# @DynamicPropertySource (Testcontainers), so no fixed URLs belong here.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  kafka:
+    consumer:
+      group-id: transaction-history-service-test
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+
+logging:
+  level:
+    root: WARN
+    com.payments.platform: DEBUG
+    org.springframework.kafka: WARN
+    org.apache.kafka: ERROR
