@@ -7,6 +7,7 @@ import com.payments.platform.accountservice.persistence.AccountRepository;
 import com.payments.platform.accountservice.persistence.LedgerEntryRepository;
 import com.payments.platform.accountservice.exception.AccountNotFoundException;
 import com.payments.platform.accountservice.exception.InsufficientBalanceException;
+import com.payments.platform.accountservice.outbox.LedgerEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,14 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
+    private final LedgerEventPublisher ledgerEventPublisher;
 
-    public AccountService(AccountRepository accountRepository, LedgerEntryRepository ledgerEntryRepository) {
+    public AccountService(AccountRepository accountRepository,
+                          LedgerEntryRepository ledgerEntryRepository,
+                          LedgerEventPublisher ledgerEventPublisher) {
         this.accountRepository = accountRepository;
         this.ledgerEntryRepository = ledgerEntryRepository;
+        this.ledgerEventPublisher = ledgerEventPublisher;
     }
 
     @Transactional
@@ -54,6 +59,10 @@ public class AccountService {
                 .build();
 
         ledgerEntryRepository.save(entry);
+        // Same transaction as the ledger write: the event and the money movement
+        // cannot end up disagreeing. Note the idempotent early return above means
+        // a retried debit does not re-emit the event.
+        ledgerEventPublisher.publishDebited(entry);
         return LedgerResponse.from(entry);
     }
 
@@ -82,6 +91,7 @@ public class AccountService {
                 .build();
 
         ledgerEntryRepository.save(entry);
+        ledgerEventPublisher.publishCredited(entry);
         return LedgerResponse.from(entry);
     }
 

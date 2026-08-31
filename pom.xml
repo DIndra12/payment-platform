@@ -34,6 +34,7 @@
         <module>fraud-service</module>
         <module>payment-service</module>
         <module>notification-service</module>
+        <module>transaction-history-service</module>
     </modules>
 
     <dependencyManagement>
@@ -304,6 +305,9 @@
                                                 <include>com.payments.platform.accountservice.api</include>
                                                 <include>com.payments.platform.fraudservice.detection</include>
                                                 <include>com.payments.platform.fraudservice.api</include>
+                                                <include>com.payments.platform.transactionhistoryservice.projection</include>
+                                                <include>com.payments.platform.transactionhistoryservice.query</include>
+                                                <include>com.payments.platform.transactionhistoryservice.api</include>
                                             </includes>
                                             <limits>
                                                 <limit>

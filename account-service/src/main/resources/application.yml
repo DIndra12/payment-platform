@@ -27,6 +27,18 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+  kafka:
+    # 9094 is the EXTERNAL listener docker-compose exposes on the host.
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9094}
+    producer:
+      # The outbox already serialized the payload to a JSON string, so both key
+      # and value go out as plain strings. Using JsonSerializer here would
+      # double-encode the payload into a quoted string.
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+
 server:
   port: 8081
   error:

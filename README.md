@@ -54,7 +54,10 @@ cd payment-service && mvn spring-boot:run
 # Terminal 4 - Notification Service (Port 8084)
 cd notification-service && mvn spring-boot:run
 
-# 6. Test a payment (Terminal 5)
+# Terminal 5 - Transaction History Service (Port 8085)
+cd transaction-history-service && mvn spring-boot:run
+
+# 6. Test a payment (Terminal 6)
 curl -X POST http://localhost:8083/api/v1/payments \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: test-payment-1" \
@@ -148,20 +151,25 @@ This is a **teaching project**, not a toy. Every concept has a real-world reason
      ▼                                        ▼
 ┌──────────────────────────────┐  ┌──────────────────────────────┐
 │   NOTIFICATION SERVICE       │  │ TRANSACTION HISTORY SERVICE  │
-│   (Consumer Only)            │  │ (Phase 2 - Consumer Only)    │
+│   Port: 8084 (Consumer Only) │  │ Port: 8085 (Consumer + Query)│
 │                              │  │                              │
 │  • Listen to payment events  │  │ • Build denormalized view    │
-│  • Send notifications (SMS)  │  │ • Provide search API         │
+│  • Send notifications (SMS)  │  │ • Query API for history      │
 │  • Dedupe on eventId         │  │ • CQRS-style read model      │
+│                              │  │ • Order-independent stitching│
+│                              │  │ • Retry + dead-letter topics │
 └──────────────────────────────┘  └──────────────────────────────┘
 
 DATABASE TIER (PostgreSQL)
-┌──────────────────┬──────────────────┬──────────────────┐
-│   payment_db     │   account_db     │    fraud_db      │
-│                  │                  │                  │
-│ • payments       │ • accounts       │ • risk_rules     │
-│ • outbox_events  │ • ledger_entries │ • risk_history   │
-└──────────────────┴──────────────────┴──────────────────┘
+┌──────────────┬──────────────┬──────────────┬─────────────────┬──────────────────────┐
+│  payment_db  │  account_db  │   fraud_db   │ notification_db │ transaction_history_db│
+│              │              │              │                 │                      │
+│ • payments   │ • accounts   │ • risk_rules │ • notification_ │ • transaction_history│
+│ • outbox_    │ • ledger_    │ • risk_      │   log           │   (denormalized)     │
+│   event      │   entries    │   history    │                 │ • processed_event    │
+│              │ • outbox_    │              │                 │   (dedupe ledger)    │
+│              │   event      │              │                 │                      │
+└──────────────┴──────────────┴──────────────┴─────────────────┴──────────────────────┘
 ```
 
 ### Communication Patterns
@@ -327,6 +335,8 @@ psql -U root -h 127.0.0.1
 CREATE DATABASE payment_db;
 CREATE DATABASE account_db;
 CREATE DATABASE fraud_db;
+CREATE DATABASE notification_db;
+CREATE DATABASE transaction_history_db;
 \q
 ```
 
@@ -336,7 +346,13 @@ Or via a script:
 psql -U root -h 127.0.0.1 -c "CREATE DATABASE payment_db;"
 psql -U root -h 127.0.0.1 -c "CREATE DATABASE account_db;"
 psql -U root -h 127.0.0.1 -c "CREATE DATABASE fraud_db;"
+psql -U root -h 127.0.0.1 -c "CREATE DATABASE notification_db;"
+psql -U root -h 127.0.0.1 -c "CREATE DATABASE transaction_history_db;"
 ```
+
+If you use `docker-compose up`, `infrastructure/postgres/init.sql` creates all five
+for you — but only on a **fresh** volume. If the volume already exists, either run
+the statements above or recreate it with `docker-compose down -v`.
 
 ### Step 5: Build the Entire Project
 
@@ -703,6 +719,104 @@ curl http://localhost:8081/api/v1/accounts/00000000-0000-0000-0000-000000000001/
 }
 ```
 
+### Transaction History Service (Port 8085)
+
+The CQRS read model. It consumes `payment.completed`, `payment.failed`,
+`account.debited` and `account.credited`, and serves account-scoped history from a
+single denormalized table.
+
+**Eventual consistency:** a payment that just returned `202` may take a few seconds
+to appear here (outbox poll interval + consumer lag). For read-your-writes, query
+payment-service directly.
+
+#### 1. Get Account Transaction History
+
+**Endpoint:** `GET /api/v1/transactions/account/{accountId}`
+
+Query parameters (all optional): `status` (`IN_PROGRESS|COMPLETED|FAILED`),
+`direction` (`DEBIT|CREDIT`), `from` / `to` (ISO date-time), `page` (default 0),
+`size` (default 20, max 100).
+
+```bash
+curl "http://localhost:8085/api/v1/transactions/account/11111111-1111-1111-1111-111111111111?size=20"
+```
+
+**Response:**
+```json
+{
+  "accountId": "11111111-1111-1111-1111-111111111111",
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1,
+  "transactions": [
+    {
+      "paymentId": "a1b2c3d4-e5f6-47g8-h9i0-j1k2l3m4n5o6",
+      "direction": "DEBIT",
+      "counterpartyAccountId": "22222222-2222-2222-2222-222222222222",
+      "amount": 500.5000,
+      "currency": "INR",
+      "status": "COMPLETED",
+      "debitedAt": "2026-08-29T10:30:46",
+      "creditedAt": "2026-08-29T10:30:46",
+      "completedAt": "2026-08-29T10:30:47",
+      "eventsSeen": "payment.completed,account.debited,account.credited"
+    },
+    {
+      "paymentId": "e5f6a7b8-...",
+      "direction": "DEBIT",
+      "counterpartyAccountId": null,
+      "amount": 200.0000,
+      "status": "IN_PROGRESS",
+      "debitedAt": "2026-08-29T10:31:02",
+      "creditedAt": null,
+      "completedAt": null,
+      "eventsSeen": "account.debited"
+    }
+  ]
+}
+```
+
+`direction` is derived per request: the same stored row is a `DEBIT` to the payer
+and a `CREDIT` to the payee. `IN_PROGRESS` with a null `creditedAt` means the
+remaining events have not been projected yet — partial state is reported rather
+than hidden.
+
+#### 2. Get a Single Transaction
+
+**Endpoint:** `GET /api/v1/transactions/{paymentId}` (optional `?accountId=` sets
+the perspective for `direction` / `counterpartyAccountId`)
+
+```bash
+curl "http://localhost:8085/api/v1/transactions/a1b2c3d4-e5f6-47g8-h9i0-j1k2l3m4n5o6"
+```
+
+Returns `404` if the payment has not been projected yet.
+
+#### 3. Get Account Summary
+
+**Endpoint:** `GET /api/v1/transactions/account/{accountId}/summary`
+
+```bash
+curl "http://localhost:8085/api/v1/transactions/account/11111111-1111-1111-1111-111111111111/summary"
+```
+
+**Response:**
+```json
+{
+  "accountId": "11111111-1111-1111-1111-111111111111",
+  "totalTransactions": 2,
+  "totalOutgoing": 700.5000,
+  "totalIncoming": 0,
+  "countByStatus": { "IN_PROGRESS": 1, "COMPLETED": 1, "FAILED": 0 }
+}
+```
+
+> ⚠️ **No authorization yet.** These endpoints will return any account's history to
+> any caller. The intended control is JWT validation at the API Gateway with the
+> token subject checked against the requested `accountId` (design doc 2.10), and
+> the Gateway does not exist yet. Treat this service as internal-only until it does.
+
 ### Fraud Service (Port 8082)
 
 #### 1. Evaluate Risk
@@ -824,6 +938,33 @@ payment-platform/                   # Root project (Maven aggregator)
 │   └── src/main/resources/
 │       └── db/migration/
 │
+├── transaction-history-service/     # CQRS Read Model (consumer + query API)
+│   ├── pom.xml
+│   ├── src/main/java/com/payments/platform/transactionhistoryservice/
+│   │   ├── projection/              # The core: order-independent event stitching
+│   │   │   ├── TransactionProjector.java
+│   │   │   ├── TransactionStatus.java
+│   │   │   ├── EventType.java
+│   │   │   └── EventContext.java
+│   │   ├── kafka/                   # Consumers + per-type factories + DLT handler
+│   │   │   ├── KafkaConsumerConfig.java
+│   │   │   ├── PaymentEventConsumer.java
+│   │   │   └── AccountEventConsumer.java
+│   │   ├── api/                     # Query endpoints & response DTOs
+│   │   ├── query/                   # Read-side service
+│   │   ├── dto/                     # Inbound event contracts (4 topics)
+│   │   ├── persistence/             # Repositories, specifications, entities
+│   │   ├── metrics/                 # Micrometer counters/timers
+│   │   └── exception/
+│   ├── src/test/java/
+│   │   ├── unit/                    # Projector ordering/dedupe/merge logic
+│   │   ├── integration/             # Testcontainers Kafka + Postgres, DLT
+│   │   ├── acceptance/              # Scrambled events → HTTP query
+│   │   └── support/                 # Container base class + wire-format fixtures
+│   └── src/main/resources/
+│       └── db/migration/
+│           └── V1__init_transaction_history_schema.sql
+│
 ├── fraud-service/                   # Risk Detection & Scoring
 │   ├── pom.xml
 │   ├── src/main/java/com/payments/platform/fraudservice/
@@ -880,7 +1021,12 @@ payment-platform/                   # Root project (Maven aggregator)
 
 ### Phase 2: Complete Infrastructure
 - [x] **Notification Service** — Kafka consumer for payment.completed events
-- [ ] **Transaction History Service** — CQRS read model from multiple Kafka topics
+- [x] **Transaction History Service** — CQRS read model from multiple Kafka topics
+  (see [transaction-history-service-design.md](transaction-history-service-design.md))
+- [x] **Reliable event publishing** — `payment.failed` events, enriched payloads
+  (`eventId`, `status`, `occurredAt`), Kafka message keys, and an outbox in
+  account-service emitting `account.debited` / `account.credited`
+- [x] **Dead Letter Topics** — retry with backoff then `<topic>.DLT` in transaction-history-service
 - [ ] **OpenTelemetry Integration** — Distributed tracing across services
 - [ ] **Prometheus & Grafana** — Metrics and dashboards
 - [ ] **Keycloak Integration** — OAuth2/JWT service authentication

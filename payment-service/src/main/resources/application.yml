@@ -28,10 +28,18 @@ spring:
     baseline-on-migrate: true
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    # 9094 is the EXTERNAL listener docker-compose publishes to the host; 9092 is
+    # the in-network listener and is unreachable when running the service locally.
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      # StringSerializer, not JsonSerializer: OutboxSenderKafkaAdapter hands over a
+      # payload that has ALREADY been serialized to a JSON string. JsonSerializer
+      # would encode that string again, putting a quoted/escaped string literal on
+      # the topic instead of a JSON object, which every consumer then fails to bind.
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
     consumer:
       group-id: payment-service-group
       auto-offset-reset: earliest

@@ -9,7 +9,7 @@ public class TestOutboxSenderConfig {
 
     @Bean
     public OutboxSender outboxSender() {
-        return (topic, payload) -> {
+        return (topic, key, payload) -> {
             // stub: do nothing, assume send succeeds
         };
     }
