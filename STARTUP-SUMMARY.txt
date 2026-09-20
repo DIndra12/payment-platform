@@ -1,89 +1,45 @@
 ╔════════════════════════════════════════════════════════════════════════════╗
-║    ✅ AUTOMATED STARTUP/STOP SCRIPTS CREATED & COMMITTED                  ║
+║         ✅ AUTOMATED STARTUP SCRIPT CREATED - BATCH VERSION               ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 
 📦 FILES CREATED:
 
-   1. start-all.sh (Unix/Linux/macOS)
-      ✓ Bash automation script
-      ✓ Executable permissions set
-      ✓ Color-coded output
+   1. start-all.bat (Windows Batch)
+      ✓ Simple, reliable startup automation
+      ✓ No output redirection issues
+      ✓ Opens each service in its own window
+      ✓ Automatically verifies all services
 
-   2. start-all.ps1 (Windows PowerShell)
-      ✓ PowerShell automation script
-      ✓ Same functionality as Bash version
-      ✓ Windows-native terminal management
-
-   3. stop-all.sh (Unix/Linux/macOS)
+   2. stop-all.bat (Windows Batch)
       ✓ Graceful service shutdown
-      ✓ Docker cleanup
-
-   4. stop-all.ps1 (Windows PowerShell)
-      ✓ Windows version of stop script
-
-   5. SETUP-GUIDE.md (50+ pages)
-      ✓ Complete setup documentation
-      ✓ Troubleshooting guide
-      ✓ Advanced operations
+      ✓ Stops Docker containers
+      ✓ Preserves data by default
 
 ════════════════════════════════════════════════════════════════════════════════
 
 🚀 WHAT THESE SCRIPTS DO:
 
-   START-ALL:
-   ─────────
-   1. Verify Docker is installed and running
-   2. Verify Java 21 is installed
-   3. Check ports are available
-   4. Start Docker containers (PostgreSQL, Kafka, Keycloak)
-   5. Build all microservices with Maven
-   6. Start all 5 Spring Boot services in terminal windows
-   7. Verify all services are healthy
-   8. Display summary with URLs
+   START-ALL.BAT:
+   ──────────────
+   1. Check Docker is installed and running
+   2. Start Docker containers (PostgreSQL, Kafka, Keycloak)
+   3. Build all microservices with Maven
+   4. Start all 5 Spring Boot services in separate windows
+   5. Verify all services are healthy
+   6. Display summary with URLs and next steps
 
-   STOP-ALL:
-   ────────
-   1. Terminate Spring Boot services
-   2. Stop Docker containers
+   STOP-ALL.BAT:
+   ─────────────
+   1. Stop Docker containers
+   2. Preserve data (volumes intact)
    3. Display cleanup summary
 
 ════════════════════════════════════════════════════════════════════════════════
 
-📋 QUICK START (Choose your platform):
+📋 QUICK START (1 command):
 
-   macOS/Linux:
-   ────────────
-   chmod +x start-all.sh          # First time only
-   ./start-all.sh                 # Start everything
-
-   Windows PowerShell:
-   ───────────────────
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   .\start-all.ps1                # Start everything
-
-════════════════════════════════════════════════════════════════════════════════
-
-🎯 STARTUP OPTIONS:
-
-   Normal Startup:
-   ───────────────
-   ./start-all.sh                 # Unix/Linux/macOS
-   .\start-all.ps1                # Windows PowerShell
-
-   Fresh Start (Clean):
-   ────────────────────
-   ./start-all.sh --clean         # Remove existing containers/volumes
-   .\start-all.ps1 -Clean         # Windows version
-
-   Skip Docker (Use Existing):
-   ──────────────────────────────
-   ./start-all.sh --skip-docker   # Docker already running
-   .\start-all.ps1 -SkipDocker    # Windows version
-
-   Skip Build (Fastest):
-   ──────────────────────
-   ./start-all.sh --skip-build    # Use existing JARs
-   .\start-all.ps1 -SkipBuild     # Windows version
+   cd C:\coding\payment-platform
+   start-all.bat
 
 ════════════════════════════════════════════════════════════════════════════════
 
@@ -108,29 +64,22 @@
 ✨ KEY FEATURES:
 
    ✓ One-command startup for entire platform
-   ✓ Prerequisites verification (Docker, Java)
-   ✓ Automatic port availability checks
-   ✓ PostgreSQL readiness verification
-   ✓ All services health check
-   ✓ Terminal multiplexer support (tmux/screen)
-   ✓ PowerShell support for Windows
-   ✓ Color-coded output (easy to read)
-   ✓ Graceful error handling
-   ✓ Works on macOS, Linux, and Windows
+   ✓ Docker prerequisites check
+   ✓ All services start in separate windows for easy viewing
+   ✓ Automatic health verification
+   ✓ Clear output and status messages
+   ✓ Simple and reliable (no PowerShell issues)
+   ✓ Works on Windows
 
 ════════════════════════════════════════════════════════════════════════════════
 
 🛑 STOPPING SERVICES:
 
-   macOS/Linux:
-   ────────────
-   ./stop-all.sh                  # Stop services (keep data)
-   ./stop-all.sh --remove-volumes # Stop and delete everything
+   To stop services (keep data):
+   ─────────────────────────────
+   stop-all.bat
 
-   Windows PowerShell:
-   ───────────────────
-   .\stop-all.ps1                 # Stop services (keep data)
-   .\stop-all.ps1 -RemoveVolumes  # Stop and delete everything
+   Or simply close the service windows manually.
 
 ════════════════════════════════════════════════════════════════════════════════
 
@@ -140,7 +89,7 @@
    ✓ Prerequisites checklist
    ✓ Detailed usage guide
    ✓ Testing instructions (Postman, curl)
-   ✓ Troubleshooting (6+ common issues)
+   ✓ Troubleshooting guide
    ✓ Database access details
    ✓ Kafka topics reference
    ✓ Performance tuning
@@ -149,10 +98,13 @@
 
 ════════════════════════════════════════════════════════════════════════════════
 
-✅ COMMIT: c0b7ca0
+✅ FILES IN PROJECT:
 
-   Message: "feat: add complete automated startup/stop scripts for all services"
-   Files: 5 files, 1569+ lines of code and documentation
+   - start-all.bat (Main startup script)
+   - stop-all.bat (Shutdown script)
+   - SETUP-GUIDE.md (Complete setup documentation)
+   - POSTMAN-GUIDE.md (API testing guide)
+   - PRODUCTION-READINESS.md (Production roadmap)
 
 ════════════════════════════════════════════════════════════════════════════════
 
@@ -160,15 +112,12 @@
 
    ✓ Input Validation Implementation (43 unit tests)
    ✓ Postman Collection (35+ requests)
-   ✓ Automated Startup Scripts (Unix & Windows)
+   ✓ Automated Startup Script (Simple batch file)
    ✓ Comprehensive Documentation
 
-   ► NEXT STEP: Run the startup script!
+   ► READY TO START!
 
-   macOS/Linux:
-     chmod +x start-all.sh && ./start-all.sh
-
-   Windows:
-     .\start-all.ps1
+   Just run:
+     start-all.bat
 
 ════════════════════════════════════════════════════════════════════════════════

@@ -30,68 +30,46 @@ Everything you need to get the Payment Platform running locally with a single co
 
 ---
 
-## Quick Start (3 steps)
+## Quick Start (2 steps)
 
 ### Step 1: Verify Prerequisites
 
-**macOS/Linux:**
-```bash
+```batch
 # Check Docker
 docker --version
 docker-compose --version
 
 # Check Java
 java -version
-
-# Check Maven wrapper
-./mvnw --version
-```
-
-**Windows (PowerShell):**
-```powershell
-# Check Docker
-docker --version
-docker-compose --version
-
-# Check Java
-java -version
-
-# Check Maven wrapper
-.\mvnw.cmd --version
 ```
 
 ### Step 2: Run Startup Script
 
-**macOS/Linux:**
-```bash
-chmod +x start-all.sh  # Make script executable (first time only)
-./start-all.sh
+**Windows (Batch):**
+```batch
+cd C:\coding\payment-platform
+start-all.bat
 ```
-
-**Windows (PowerShell):**
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser  # First time only
-.\start-all.ps1
-```
-
-### Step 3: Wait for Services
 
 The script will:
-1. ✅ Start Docker containers (PostgreSQL, Kafka, Keycloak)
-2. ✅ Build all 5 microservices
-3. ✅ Start each service in a separate terminal
-4. ✅ Verify all services are healthy
-5. ✅ Display summary with next steps
+1. ✅ Check Docker is running
+2. ✅ Start Docker containers (PostgreSQL, Kafka, Keycloak)
+3. ✅ Build all 5 microservices
+4. ✅ Start each service in a separate window
+5. ✅ Verify all services are healthy
+6. ✅ Display summary with next steps
 
 **Expected output:**
 ```
-✓ account-service is running on port 8081
-✓ fraud-service is running on port 8082
-✓ payment-service is running on port 8083
-✓ notification-service is running on port 8084
-✓ transaction-history-service is running on port 8085
-
-All services are healthy and running!
+[OK] Docker is running
+[OK] Docker infrastructure started
+[OK] All services built successfully
+[OK] Service on port 8081 is running
+[OK] Service on port 8082 is running
+[OK] Service on port 8083 is running
+[OK] Service on port 8084 is running
+[OK] Service on port 8085 is running
+[OK] All services are healthy and running!
 ```
 
 ---
@@ -120,61 +98,30 @@ All services are healthy and running!
 
 ## Usage
 
-### Normal Startup
+### Normal Startup (Windows Batch)
 
-```bash
-# macOS/Linux
-./start-all.sh
-
-# Windows PowerShell
-.\start-all.ps1
+```batch
+start-all.bat
 ```
+
+Starts everything: Docker infrastructure, builds services, starts all 5 services.
 
 ### Fresh Start (Clean Everything)
 
-```bash
-# macOS/Linux
-./start-all.sh --clean
-
-# Windows PowerShell
-.\start-all.ps1 -Clean
+```batch
+docker-compose down -v
+start-all.bat
 ```
 
 Removes all Docker containers and volumes, then starts fresh with new databases.
 
-### Skip Docker (Use Existing Infrastructure)
+### Stop Services
 
-```bash
-# macOS/Linux
-./start-all.sh --skip-docker
-
-# Windows PowerShell
-.\start-all.ps1 -SkipDocker
+```batch
+stop-all.bat
 ```
 
-Useful if Docker infrastructure is already running and you only want to rebuild/restart services.
-
-### Skip Build (Use Existing JARs)
-
-```bash
-# macOS/Linux
-./start-all.sh --skip-build
-
-# Windows PowerShell
-.\start-all.ps1 -SkipBuild
-```
-
-Faster startup if you haven't changed code. Skips Maven build.
-
-### Combine Flags
-
-```bash
-# macOS/Linux
-./start-all.sh --skip-docker --skip-build
-
-# Windows PowerShell
-.\start-all.ps1 -SkipDocker -SkipBuild
-```
+Stops Docker containers and preserves data.
 
 ---
 
@@ -182,27 +129,19 @@ Faster startup if you haven't changed code. Skips Maven build.
 
 ### Stop All Services (Keep Data)
 
-```bash
-# macOS/Linux
-./stop-all.sh
-
-# Windows PowerShell
-.\stop-all.ps1
+```batch
+stop-all.bat
 ```
 
-Stops services but preserves Docker volumes (databases intact).
+Stops services but preserves Docker volumes (databases intact). Can restart with `start-all.bat`.
 
 ### Stop All Services (Delete Data)
 
-```bash
-# macOS/Linux
-./stop-all.sh --remove-volumes
-
-# Windows PowerShell
-.\stop-all.ps1 -RemoveVolumes
+```batch
+docker-compose down -v
 ```
 
-Removes everything including databases. Same as `--clean` start.
+Removes everything including databases. Next run with `start-all.bat` will start fresh.
 
 ---
 
