@@ -1,0 +1,123 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║         ✅ AUTOMATED STARTUP SCRIPT CREATED - BATCH VERSION               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📦 FILES CREATED:
+
+   1. start-all.bat (Windows Batch)
+      ✓ Simple, reliable startup automation
+      ✓ No output redirection issues
+      ✓ Opens each service in its own window
+      ✓ Automatically verifies all services
+
+   2. stop-all.bat (Windows Batch)
+      ✓ Graceful service shutdown
+      ✓ Stops Docker containers
+      ✓ Preserves data by default
+
+════════════════════════════════════════════════════════════════════════════════
+
+🚀 WHAT THESE SCRIPTS DO:
+
+   START-ALL.BAT:
+   ──────────────
+   1. Check Docker is installed and running
+   2. Start Docker containers (PostgreSQL, Kafka, Keycloak)
+   3. Build all microservices with Maven
+   4. Start all 5 Spring Boot services in separate windows
+   5. Verify all services are healthy
+   6. Display summary with URLs and next steps
+
+   STOP-ALL.BAT:
+   ─────────────
+   1. Stop Docker containers
+   2. Preserve data (volumes intact)
+   3. Display cleanup summary
+
+════════════════════════════════════════════════════════════════════════════════
+
+📋 QUICK START (1 command):
+
+   cd C:\coding\payment-platform
+   start-all.bat
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 SERVICES THAT START:
+
+   Spring Boot Services (5 microservices):
+   ───────────────────────────────────────
+   ✓ Account Service               Port 8081
+   ✓ Fraud Service                 Port 8082
+   ✓ Payment Service               Port 8083
+   ✓ Notification Service          Port 8084
+   ✓ Transaction History Service   Port 8085
+
+   Docker Infrastructure (3 containers):
+   ──────────────────────────────────────
+   ✓ PostgreSQL 16                 Port 5432
+   ✓ Kafka 3.7                     Port 9094
+   ✓ Keycloak 24                   Port 8080
+
+════════════════════════════════════════════════════════════════════════════════
+
+✨ KEY FEATURES:
+
+   ✓ One-command startup for entire platform
+   ✓ Docker prerequisites check
+   ✓ All services start in separate windows for easy viewing
+   ✓ Automatic health verification
+   ✓ Clear output and status messages
+   ✓ Simple and reliable (no PowerShell issues)
+   ✓ Works on Windows
+
+════════════════════════════════════════════════════════════════════════════════
+
+🛑 STOPPING SERVICES:
+
+   To stop services (keep data):
+   ─────────────────────────────
+   stop-all.bat
+
+   Or simply close the service windows manually.
+
+════════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+   See SETUP-GUIDE.md for:
+   ✓ Prerequisites checklist
+   ✓ Detailed usage guide
+   ✓ Testing instructions (Postman, curl)
+   ✓ Troubleshooting guide
+   ✓ Database access details
+   ✓ Kafka topics reference
+   ✓ Performance tuning
+   ✓ Development workflow
+   ✓ Advanced operations
+
+════════════════════════════════════════════════════════════════════════════════
+
+✅ FILES IN PROJECT:
+
+   - start-all.bat (Main startup script)
+   - stop-all.bat (Shutdown script)
+   - SETUP-GUIDE.md (Complete setup documentation)
+   - POSTMAN-GUIDE.md (API testing guide)
+   - PRODUCTION-READINESS.md (Production roadmap)
+
+════════════════════════════════════════════════════════════════════════════════
+
+🎉 YOU NOW HAVE:
+
+   ✓ Input Validation Implementation (43 unit tests)
+   ✓ Postman Collection (35+ requests)
+   ✓ Automated Startup Script (Simple batch file)
+   ✓ Comprehensive Documentation
+
+   ► READY TO START!
+
+   Just run:
+     start-all.bat
+
+════════════════════════════════════════════════════════════════════════════════

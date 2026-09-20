@@ -1,5 +1,6 @@
 package com.payments.platform.paymentservice.outbox;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -9,8 +10,14 @@ import java.util.List;
  * Polls unpublished outbox rows and pushes them to Kafka.
  *
  * <p>Requires {@code @EnableScheduling} on the application class to run at all.
+ * <p>Disabled in test profiles via {@code outbox.publisher.enabled=false}.
  */
 @Service
+@ConditionalOnProperty(
+    name = "outbox.publisher.enabled",
+    havingValue = "true",
+    matchIfMissing = true  // Enabled by default in production
+)
 public class OutboxPublisher {
 
     private final OutboxEventRepository repository;

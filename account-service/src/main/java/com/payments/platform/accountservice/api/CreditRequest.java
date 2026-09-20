@@ -11,10 +11,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class CreditRequest {
-    @NotNull
-    @Positive
+    @NotNull(message = "Credit amount cannot be null")
+    @Positive(message = "Credit amount must be greater than 0")
     private BigDecimal amount;
 
-    @NotNull
+    @NotNull(message = "Reference ID cannot be null")
     private UUID referenceId;
 }

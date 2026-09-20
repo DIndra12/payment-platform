@@ -1,3 +1,20 @@
-external-services:
-  fraud-service-url: http://localhost:${wiremock.server.port}
-  account-service-url: http://localhost:${wiremock.server.port}
+# Test-specific configuration
+# Disables components that require external infrastructure (Kafka, etc.)
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9094
+    producer:
+      acks: none  # Don't wait for Kafka in tests
+      retries: 0
+
+# Disable outbox publisher for acceptance tests (no Kafka in test environment)
+outbox:
+  publisher:
+    enabled: false
+
+# Test logging
+logging:
+  level:
+    com.payments.platform: DEBUG
+    org.springframework.kafka: WARN

@@ -1,0 +1,55 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: api-gateway-service
+  profiles:
+    active: local
+
+  # Disable some autoconfiguration features we don't need
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+
+logging:
+  level:
+    root: INFO
+    com.payments.platform: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    io.jsonwebtoken: DEBUG
+
+# Keycloak OAuth2 Configuration
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://keycloak:8080/realms/payment-platform"
+          jwk-set-uri: "http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs"
+
+# JWT Configuration (for token generation in tests)
+jwt:
+  secret: "your-super-secret-key-that-is-at-least-32-characters-long-for-hs256"
+  expiration: 3600000  # 1 hour in milliseconds
+
+# Management endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true

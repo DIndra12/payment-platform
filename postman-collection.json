@@ -1,0 +1,1079 @@
+{
+  "info": {
+    "name": "Payment Platform - Microservices",
+    "description": "Complete API collection for testing all 5 microservices locally",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_variable_scope": "collection",
+    "_postman_exported_at": "2026-09-20T22:50:00.000Z",
+    "_postman_collection_id": "payment-platform-2026"
+  },
+  "item": [
+    {
+      "name": "Setup & Variables",
+      "item": [
+        {
+          "name": "Get test accounts (Setup)",
+          "description": "Pre-defined test account IDs to use throughout collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Set collection variables for test accounts",
+                  "pm.collectionVariables.set('payer_account_id', '00000000-0000-0000-0000-000000000001');",
+                  "pm.collectionVariables.set('payee_account_id', '00000000-0000-0000-0000-000000000002');",
+                  "pm.collectionVariables.set('payment_id', '');",
+                  "",
+                  "// Set base URLs",
+                  "pm.collectionVariables.set('payment_service_url', 'http://localhost:8083');",
+                  "pm.collectionVariables.set('account_service_url', 'http://localhost:8081');",
+                  "pm.collectionVariables.set('fraud_service_url', 'http://localhost:8082');",
+                  "pm.collectionVariables.set('notification_service_url', 'http://localhost:8084');",
+                  "pm.collectionVariables.set('transaction_history_service_url', 'http://localhost:8085');",
+                  "",
+                  "console.log('✅ Test environment variables set successfully');",
+                  "console.log('Payer Account: ' + pm.collectionVariables.get('payer_account_id'));",
+                  "console.log('Payee Account: ' + pm.collectionVariables.get('payee_account_id'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/actuator/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8083",
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Payment Service (Port 8083)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{payment_service_url}}/actuator/health",
+              "host": ["{{payment_service_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment - Valid (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('payment_id', jsonData.paymentId);",
+                  "    pm.test('Payment created successfully', function() {",
+                  "        pm.expect(jsonData).to.have.property('paymentId');",
+                  "        pm.expect(jsonData).to.have.property('status');",
+                  "        pm.expect(jsonData.status).to.equal('INITIATED');",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Status is 202 Accepted', function() {",
+                  "        pm.response.to.have.status(202);",
+                  "    });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique idempotency key",
+                  "var timestamp = new Date().getTime();",
+                  "var randomString = Math.random().toString(36).substring(7);",
+                  "var idempotencyKey = 'payment-' + timestamp + '-' + randomString;",
+                  "pm.environment.set('idempotency_key', idempotencyKey);",
+                  "console.log('Generated Idempotency Key: ' + idempotencyKey);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"payeeAccountId\": \"{{payee_account_id}}\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{payment_service_url}}/api/v1/payments",
+              "host": ["{{payment_service_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment - Negative Amount (Validation Error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('detail');",
+                  "    pm.expect(jsonData.detail).to.include('must be at least 0.01');",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var timestamp = new Date().getTime();",
+                  "var randomString = Math.random().toString(36).substring(7);",
+                  "pm.environment.set('idempotency_key', 'payment-negative-' + timestamp + '-' + randomString);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"payeeAccountId\": \"{{payee_account_id}}\",\n  \"amount\": -50.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{payment_service_url}}/api/v1/payments",
+              "host": ["{{payment_service_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment - Invalid Currency (Validation Error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains currency validation error', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.detail).to.include('ISO 4217');",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "var timestamp = new Date().getTime();",
+                  "var randomString = Math.random().toString(36).substring(7);",
+                  "pm.environment.set('idempotency_key', 'payment-invalid-curr-' + timestamp + '-' + randomString);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"payeeAccountId\": \"{{payee_account_id}}\",\n  \"amount\": 100.00,\n  \"currency\": \"us\"\n}"
+            },
+            "url": {
+              "raw": "{{payment_service_url}}/api/v1/payments",
+              "host": ["{{payment_service_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment - Idempotency Test (Same Key)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 202 Accepted', function() {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "pm.test('Response has same payment ID (idempotent)', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    var savedPaymentId = pm.collectionVariables.get('payment_id');",
+                  "    pm.expect(jsonData.paymentId).to.equal(savedPaymentId);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "idempotency-test-same-key-12345"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"payeeAccountId\": \"{{payee_account_id}}\",\n  \"amount\": 250.00,\n  \"currency\": \"INR\"\n}"
+            },
+            "url": {
+              "raw": "{{payment_service_url}}/api/v1/payments",
+              "host": ["{{payment_service_url}}"],
+              "path": ["api", "v1", "payments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Payment response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('paymentId');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('amount');",
+                  "    pm.expect(jsonData).to.have.property('currency');",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{payment_service_url}}/api/v1/payments/{{payment_id}}",
+              "host": ["{{payment_service_url}}"],
+              "path": ["api", "v1", "payments", "{{payment_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Account Service (Port 8081)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{account_service_url}}/actuator/health",
+              "host": ["{{account_service_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Balance response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('accountId');",
+                  "    pm.expect(jsonData).to.have.property('balance');",
+                  "    pm.expect(jsonData).to.have.property('currency');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{account_service_url}}/api/v1/accounts/{{payer_account_id}}/balance",
+              "host": ["{{account_service_url}}"],
+              "path": ["api", "v1", "accounts", "{{payer_account_id}}", "balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Ledger (Transaction History)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Ledger response has entries array', function() {",
+                  "    pm.expect(jsonData).to.have.property('accountId');",
+                  "    pm.expect(jsonData).to.have.property('entries');",
+                  "    pm.expect(jsonData.entries).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{account_service_url}}/api/v1/accounts/{{payer_account_id}}/ledger",
+              "host": ["{{account_service_url}}"],
+              "path": ["api", "v1", "accounts", "{{payer_account_id}}", "ledger"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit Account - Valid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Debit response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('ledgerId');",
+                  "    pm.expect(jsonData).to.have.property('amount');",
+                  "    pm.expect(jsonData).to.have.property('type');",
+                  "    pm.expect(jsonData.type).to.equal('DEBIT');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"referenceId\": \"00000000-0000-0000-0000-000000000101\"\n}"
+            },
+            "url": {
+              "raw": "{{account_service_url}}/api/v1/accounts/{{payer_account_id}}/debit",
+              "host": ["{{account_service_url}}"],
+              "path": ["api", "v1", "accounts", "{{payer_account_id}}", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Debit Account - Negative Amount (Validation Error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains validation error', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.detail).to.include('must be greater than 0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": -25.00,\n  \"referenceId\": \"00000000-0000-0000-0000-000000000102\"\n}"
+            },
+            "url": {
+              "raw": "{{account_service_url}}/api/v1/accounts/{{payer_account_id}}/debit",
+              "host": ["{{account_service_url}}"],
+              "path": ["api", "v1", "accounts", "{{payer_account_id}}", "debit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credit Account - Valid",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Credit response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('ledgerId');",
+                  "    pm.expect(jsonData).to.have.property('amount');",
+                  "    pm.expect(jsonData).to.have.property('type');",
+                  "    pm.expect(jsonData.type).to.equal('CREDIT');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 75.50,\n  \"referenceId\": \"00000000-0000-0000-0000-000000000201\"\n}"
+            },
+            "url": {
+              "raw": "{{account_service_url}}/api/v1/accounts/{{payee_account_id}}/credit",
+              "host": ["{{account_service_url}}"],
+              "path": ["api", "v1", "accounts", "{{payee_account_id}}", "credit"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Fraud Service (Port 8082)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{fraud_service_url}}/actuator/health",
+              "host": ["{{fraud_service_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Risk - Low Amount (Should APPROVE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Risk evaluation response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('riskScore');",
+                  "    pm.expect(jsonData).to.have.property('decision');",
+                  "    pm.expect(jsonData).to.have.property('reasons');",
+                  "});",
+                  "",
+                  "pm.test('Low amount should result in APPROVE decision', function() {",
+                  "    pm.expect(jsonData.decision).to.equal('APPROVE');",
+                  "    pm.expect(jsonData.riskScore).to.be.below(50);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{fraud_service_url}}/api/v1/risk/evaluate",
+              "host": ["{{fraud_service_url}}"],
+              "path": ["api", "v1", "risk", "evaluate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Risk - High Amount (Should REJECT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('High amount should result in REJECT decision', function() {",
+                  "    pm.expect(jsonData.decision).to.equal('REJECT');",
+                  "    pm.expect(jsonData.riskScore).to.be.above(50);",
+                  "});",
+                  "",
+                  "pm.test('Rejection should have reasons', function() {",
+                  "    pm.expect(jsonData.reasons).to.be.an('array');",
+                  "    pm.expect(jsonData.reasons.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"amount\": 15000.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{fraud_service_url}}/api/v1/risk/evaluate",
+              "host": ["{{fraud_service_url}}"],
+              "path": ["api", "v1", "risk", "evaluate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Risk - Invalid Currency (Validation Error)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400 Bad Request', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response contains currency validation error', function() {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.detail).to.include('ISO 4217');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"amount\": 500.00,\n  \"currency\": \"INVALID\"\n}"
+            },
+            "url": {
+              "raw": "{{fraud_service_url}}/api/v1/risk/evaluate",
+              "host": ["{{fraud_service_url}}"],
+              "path": ["api", "v1", "risk", "evaluate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Transaction History Service (Port 8085)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{transaction_history_service_url}}/actuator/health",
+              "host": ["{{transaction_history_service_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Transaction History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Transaction history response has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('accountId');",
+                  "    pm.expect(jsonData).to.have.property('page');",
+                  "    pm.expect(jsonData).to.have.property('size');",
+                  "    pm.expect(jsonData).to.have.property('totalElements');",
+                  "    pm.expect(jsonData).to.have.property('transactions');",
+                  "    pm.expect(jsonData.transactions).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{transaction_history_service_url}}/api/v1/transactions/account/{{payer_account_id}}?page=0&size=20",
+              "host": ["{{transaction_history_service_url}}"],
+              "path": ["api", "v1", "transactions", "account", "{{payer_account_id}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Transaction History - With Filters",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{transaction_history_service_url}}/api/v1/transactions/account/{{payer_account_id}}?status=COMPLETED&direction=DEBIT&page=0&size=10",
+              "host": ["{{transaction_history_service_url}}"],
+              "path": ["api", "v1", "transactions", "account", "{{payer_account_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "COMPLETED"
+                },
+                {
+                  "key": "direction",
+                  "value": "DEBIT"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Transaction by Payment ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK or 404 Not Found', function() {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{transaction_history_service_url}}/api/v1/transactions/{{payment_id}}?accountId={{payer_account_id}}",
+              "host": ["{{transaction_history_service_url}}"],
+              "path": ["api", "v1", "transactions", "{{payment_id}}"],
+              "query": [
+                {
+                  "key": "accountId",
+                  "value": "{{payer_account_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account Transaction Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 OK', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test('Transaction summary has required fields', function() {",
+                  "    pm.expect(jsonData).to.have.property('accountId');",
+                  "    pm.expect(jsonData).to.have.property('totalTransactions');",
+                  "    pm.expect(jsonData).to.have.property('totalOutgoing');",
+                  "    pm.expect(jsonData).to.have.property('totalIncoming');",
+                  "    pm.expect(jsonData).to.have.property('countByStatus');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{transaction_history_service_url}}/api/v1/transactions/account/{{payer_account_id}}/summary",
+              "host": ["{{transaction_history_service_url}}"],
+              "path": ["api", "v1", "transactions", "account", "{{payer_account_id}}", "summary"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Notification Service (Port 8084)",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notification_service_url}}/actuator/health",
+              "host": ["{{notification_service_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Info - Notification Service (Read-Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{notification_service_url}}/actuator/info",
+              "host": ["{{notification_service_url}}"],
+              "path": ["actuator", "info"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "End-to-End Workflows",
+      "item": [
+        {
+          "name": "Complete Payment Flow",
+          "item": [
+            {
+              "name": "Step 1 - Create Payment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Payment created', function() {",
+                      "    pm.response.to.have.status(202);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "pm.collectionVariables.set('e2e_payment_id', jsonData.paymentId);",
+                      "console.log('Payment ID saved: ' + jsonData.paymentId);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "var timestamp = new Date().getTime();",
+                      "pm.environment.set('idempotency_key', 'e2e-flow-' + timestamp);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Idempotency-Key",
+                    "value": "{{idempotency_key}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"payerAccountId\": \"{{payer_account_id}}\",\n  \"payeeAccountId\": \"{{payee_account_id}}\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\"\n}"
+                },
+                "url": {
+                  "raw": "{{payment_service_url}}/api/v1/payments",
+                  "host": ["{{payment_service_url}}"],
+                  "path": ["api", "v1", "payments"]
+                }
+              }
+            },
+            {
+              "name": "Step 2 - Check Payment Status (Wait 2s)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Payment status retrieved', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "console.log('Payment Status: ' + jsonData.status);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "// Wait 2 seconds for async processing",
+                      "var start = new Date().getTime();",
+                      "while (new Date().getTime() - start < 2000) {}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{payment_service_url}}/api/v1/payments/{{e2e_payment_id}}",
+                  "host": ["{{payment_service_url}}"],
+                  "path": ["api", "v1", "payments", "{{e2e_payment_id}}"]
+                }
+              }
+            },
+            {
+              "name": "Step 3 - Check Transaction History",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Transaction history retrieved', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "console.log('Total transactions: ' + jsonData.totalElements);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{transaction_history_service_url}}/api/v1/transactions/account/{{payer_account_id}}?page=0&size=5",
+                  "host": ["{{transaction_history_service_url}}"],
+                  "path": ["api", "v1", "transactions", "account", "{{payer_account_id}}"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "5"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Step 4 - Verify Account Balances",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Payer balance retrieved', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "console.log('Payer Balance: ' + jsonData.balance);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{account_service_url}}/api/v1/accounts/{{payer_account_id}}/balance",
+                  "host": ["{{account_service_url}}"],
+                  "path": ["api", "v1", "accounts", "{{payer_account_id}}", "balance"]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "payer_account_id",
+      "value": "00000000-0000-0000-0000-000000000001"
+    },
+    {
+      "key": "payee_account_id",
+      "value": "00000000-0000-0000-0000-000000000002"
+    },
+    {
+      "key": "payment_id",
+      "value": ""
+    },
+    {
+      "key": "payment_service_url",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "account_service_url",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "fraud_service_url",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "notification_service_url",
+      "value": "http://localhost:8084"
+    },
+    {
+      "key": "transaction_history_service_url",
+      "value": "http://localhost:8085"
+    },
+    {
+      "key": "idempotency_key",
+      "value": ""
+    },
+    {
+      "key": "e2e_payment_id",
+      "value": ""
+    }
+  ]
+}
