@@ -11,6 +11,10 @@ import java.util.UUID;
 @Getter
 @Setter
 public class DebitRequest {
-    @NotNull @Positive private BigDecimal amount;
-    @NotNull private UUID referenceId;
+    @NotNull(message = "Debit amount cannot be null")
+    @Positive(message = "Debit amount must be greater than 0")
+    private BigDecimal amount;
+
+    @NotNull(message = "Reference ID cannot be null")
+    private UUID referenceId;
 }
