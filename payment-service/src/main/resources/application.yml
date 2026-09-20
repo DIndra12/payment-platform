@@ -129,11 +129,6 @@ resilience4j:
   timelimiter:
     instances:
       account-service:
-        # Timeout after 2 seconds
-        timeout-duration: 2s
-        cancel-running-future: true
-
-      fraud-service:
-        # Timeout after 2 seconds
+        # Timeout after 2 seconds (only for async/CompletableFuture methods)
         timeout-duration: 2s
         cancel-running-future: true

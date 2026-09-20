@@ -31,7 +31,9 @@ public interface FraudClient {
      * Resilience applied:
      * - CircuitBreaker: Open after 50% failure rate, half-open after 30s
      * - Retry: Retry up to 3 times with exponential backoff
-     * - TimeLimiter: Timeout after 2 seconds
+     *
+     * Note: @TimeLimiter requires CompletableFuture; for sync methods,
+     * timeout is handled at the Feign/HTTP client level
      *
      * @param request Payment details to assess
      * @return Risk assessment
@@ -42,7 +44,6 @@ public interface FraudClient {
         fallbackMethod = "evaluateRiskFallback"
     )
     @Retry(name = "fraud-service")
-    @TimeLimiter(name = "fraud-service")
     FraudCheckResponse evaluateRisk(@RequestBody FraudCheckRequest request);
 
     /**
