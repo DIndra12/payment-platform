@@ -31,17 +31,8 @@ param(
     [switch]$SkipBuild
 )
 
-# Enable error handling
 $ErrorActionPreference = "Stop"
 
-# Color codes
-$Green = "`e[32m"
-$Red = "`e[31m"
-$Yellow = "`e[33m"
-$Blue = "`e[34m"
-$Reset = "`e[0m"
-
-# Configuration
 $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $DockerComposeFile = "$ProjectDir\docker-compose.yml"
 $Services = @(
@@ -52,29 +43,28 @@ $Services = @(
     @{ Name = "transaction-history-service"; Port = 8085 }
 )
 
-# Functions
 function Print-Header {
     param([string]$Text)
     Write-Host ""
-    Write-Host "$Blue════════════════════════════════════════════════════════════════$Reset"
-    Write-Host "$Blue$Text$Reset"
-    Write-Host "$Blue════════════════════════════════════════════════════════════════$Reset"
+    Write-Host "========================================================================"
+    Write-Host $Text
+    Write-Host "========================================================================"
     Write-Host ""
 }
 
 function Print-Step {
     param([string]$Text)
-    Write-Host "$Yellow▶ $Text$Reset"
+    Write-Host "[*] $Text"
 }
 
 function Print-Success {
     param([string]$Text)
-    Write-Host "$Green✓ $Text$Reset"
+    Write-Host "[OK] $Text" -ForegroundColor Green
 }
 
 function Print-Error {
     param([string]$Text)
-    Write-Host "$Red✗ $Text$Reset"
+    Write-Host "[ERROR] $Text" -ForegroundColor Red
 }
 
 function Check-Docker-Installed {
@@ -101,7 +91,7 @@ function Check-Port-Available {
 
     $Connection = Test-NetConnection -ComputerName 127.0.0.1 -Port $Port -WarningAction SilentlyContinue
     if ($Connection.TcpTestSucceeded) {
-        Print-Error "Port $Port ($Service) is already in use. Please stop the service using that port."
+        Print-Error "Port $Port ($Service) is already in use."
         return $false
     }
     return $true
@@ -111,7 +101,7 @@ function Start-Docker-Infrastructure {
     Print-Header "Starting Docker Infrastructure"
 
     if ($SkipDocker) {
-        Print-Step "Skipping Docker setup (-SkipDocker flag set)"
+        Print-Step "Skipping Docker setup (SkipDocker flag set)"
         return
     }
 
@@ -121,12 +111,12 @@ function Start-Docker-Infrastructure {
     Check-Port-Available 8080 "Keycloak" | Out-Null
 
     if ($Clean) {
-        Print-Step "Removing existing containers and volumes (-Clean flag set)..."
+        Print-Step "Removing existing containers and volumes (Clean flag set)..."
         & docker-compose -f "$DockerComposeFile" down -v 2> $null
         Start-Sleep -Seconds 2
     }
 
-    Print-Step "Starting docker-compose services (PostgreSQL, Kafka, Keycloak)"
+    Print-Step "Starting docker-compose services (PostgreSQL, Kafka, Keycloak)..."
     & docker-compose -f "$DockerComposeFile" up -d
 
     Print-Step "Waiting for PostgreSQL to be ready..."
@@ -161,7 +151,7 @@ function Build-Services {
     Print-Header "Building Microservices"
 
     if ($SkipBuild) {
-        Print-Step "Skipping Maven build (-SkipBuild flag set)"
+        Print-Step "Skipping Maven build (SkipBuild flag set)"
         return
     }
 
@@ -189,7 +179,6 @@ function Start-Microservices {
         $ServiceDir = Join-Path $ProjectDir $ServiceName
         $LogFile = "$env:TEMP\$ServiceName.log"
 
-        # Start service in new PowerShell window
         $Command = "cd '$ServiceDir'; .\mvnw spring-boot:run *> '$LogFile'; Read-Host 'Press Enter to close this window'"
         Start-Process powershell -ArgumentList "-NoExit", "-Command", $Command -WindowStyle Normal
 
@@ -253,26 +242,26 @@ function Verify-Services {
 function Print-Summary {
     Print-Header "Setup Complete!"
 
-    Write-Host "$Green All services are now running: $Reset"
+    Write-Host "All services are now running:"
     Write-Host ""
     foreach ($Service in $Services) {
         $ServiceName = $Service.Name
         $ServicePort = $Service.Port
-        Write-Host "  ✓ $($ServiceName.PadRight(30)) http://localhost:$ServicePort"
+        Write-Host "  [OK] $ServiceName : http://localhost:$ServicePort"
     }
     Write-Host ""
 
-    Write-Host "$Green Infrastructure: $Reset"
-    Write-Host "  ✓ PostgreSQL:          localhost:5432"
-    Write-Host "  ✓ Kafka:               localhost:9094"
-    Write-Host "  ✓ Keycloak:            http://localhost:8080"
+    Write-Host "Infrastructure:"
+    Write-Host "  [OK] PostgreSQL:          localhost:5432"
+    Write-Host "  [OK] Kafka:               localhost:9094"
+    Write-Host "  [OK] Keycloak:            http://localhost:8080"
     Write-Host ""
 
-    Write-Host "$Yellow Next Steps: $Reset"
+    Write-Host "Next Steps:"
     Write-Host ""
     Write-Host "1. Import Postman Collection:"
     Write-Host "   - Open Postman"
-    Write-Host "   - File → Import"
+    Write-Host "   - File > Import"
     Write-Host "   - Select: postman-collection.json"
     Write-Host ""
     Write-Host "2. Run Test Requests:"
@@ -288,7 +277,7 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Yellow Useful Commands: $Reset"
+    Write-Host "Useful Commands:"
     Write-Host ""
     Write-Host "  Stop all services:"
     Write-Host "    .\stop-all.ps1"
@@ -299,17 +288,12 @@ function Print-Summary {
     Write-Host "  Restart infrastructure:"
     Write-Host "    docker-compose up -d"
     Write-Host ""
-    Write-Host "  View documentation:"
-    Write-Host "    - README.md (Project overview)"
-    Write-Host "    - POSTMAN-GUIDE.md (How to test APIs)"
-    Write-Host "    - PRODUCTION-READINESS.md (Roadmap to production)"
-    Write-Host ""
 }
 
 function Main {
     Print-Header "Payment Platform - Complete Startup"
 
-    Print-Step "Checking prerequisites"
+    Print-Step "Checking prerequisites..."
     Check-Docker-Installed
     Check-Docker-Running
 
@@ -320,5 +304,4 @@ function Main {
     Print-Summary
 }
 
-# Run main function
 Main

@@ -21,40 +21,31 @@ param(
     [switch]$RemoveVolumes
 )
 
-# Color codes
-$Green = "`e[32m"
-$Red = "`e[31m"
-$Yellow = "`e[33m"
-$Blue = "`e[34m"
-$Reset = "`e[0m"
-
-# Configuration
 $ProjectDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $DockerComposeFile = "$ProjectDir\docker-compose.yml"
 
-# Functions
 function Print-Header {
     param([string]$Text)
     Write-Host ""
-    Write-Host "$Blue════════════════════════════════════════════════════════════════$Reset"
-    Write-Host "$Blue$Text$Reset"
-    Write-Host "$Blue════════════════════════════════════════════════════════════════$Reset"
+    Write-Host "========================================================================"
+    Write-Host $Text
+    Write-Host "========================================================================"
     Write-Host ""
 }
 
 function Print-Step {
     param([string]$Text)
-    Write-Host "$Yellow▶ $Text$Reset"
+    Write-Host "[*] $Text"
 }
 
 function Print-Success {
     param([string]$Text)
-    Write-Host "$Green✓ $Text$Reset"
+    Write-Host "[OK] $Text" -ForegroundColor Green
 }
 
 function Print-Error {
     param([string]$Text)
-    Write-Host "$Red✗ $Text$Reset"
+    Write-Host "[ERROR] $Text" -ForegroundColor Red
 }
 
 function Stop-Services {
@@ -62,7 +53,6 @@ function Stop-Services {
 
     Print-Step "Checking for running Spring Boot services..."
 
-    # Get all Java processes running Spring Boot
     $JavaProcesses = Get-Process java -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*spring-boot*" }
 
     if ($JavaProcesses) {
@@ -100,7 +90,7 @@ function Stop-Docker {
 
     try {
         if ($RemoveVolumes) {
-            Print-Step "Removing containers and volumes (-RemoveVolumes flag set)..."
+            Print-Step "Removing containers and volumes (RemoveVolumes flag set)..."
             & docker-compose -f "$DockerComposeFile" down -v
             Print-Success "Containers and volumes removed"
         }
@@ -118,16 +108,16 @@ function Stop-Docker {
 function Print-Summary {
     Print-Header "Shutdown Complete!"
 
-    Write-Host "$Green All services have been stopped: $Reset"
+    Write-Host "All services have been stopped:"
     Write-Host ""
-    Write-Host "  ✓ Spring Boot services terminated"
-    Write-Host "  ✓ Docker containers stopped"
+    Write-Host "  [OK] Spring Boot services terminated"
+    Write-Host "  [OK] Docker containers stopped"
     if ($RemoveVolumes) {
-        Write-Host "  ✓ Volumes removed (databases cleared)"
+        Write-Host "  [OK] Volumes removed (databases cleared)"
     }
     Write-Host ""
 
-    Write-Host "$Yellow To restart services: $Reset"
+    Write-Host "To restart services:"
     Write-Host ""
     if ($RemoveVolumes) {
         Write-Host "  .\start-all.ps1 -Clean"
@@ -137,7 +127,7 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Yellow Useful commands: $Reset"
+    Write-Host "Useful commands:"
     Write-Host ""
     Write-Host "  Start only Docker (no services):"
     Write-Host "    docker-compose up -d"
@@ -161,5 +151,4 @@ function Main {
     Print-Summary
 }
 
-# Run main function
 Main
