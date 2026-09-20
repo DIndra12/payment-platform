@@ -68,6 +68,10 @@ echo.
 echo [*] Starting each service in a new window...
 echo.
 
+echo   Starting: api-gateway-service (Port 8080)
+start "api-gateway-service" cmd /k "cd /d "%~dp0api-gateway-service" && mvnw.cmd spring-boot:run"
+timeout /t 2 /nobreak >nul
+
 echo   Starting: account-service (Port 8081)
 start "account-service" cmd /k "cd /d "%~dp0account-service" && mvnw.cmd spring-boot:run"
 timeout /t 1 /nobreak >nul
@@ -102,6 +106,7 @@ echo.
 
 echo All services should now be running:
 echo.
+echo   [OK] api-gateway-service:           http://localhost:8080
 echo   [OK] account-service:               http://localhost:8081
 echo   [OK] fraud-service:                 http://localhost:8082
 echo   [OK] payment-service:               http://localhost:8083
@@ -120,11 +125,15 @@ echo.
 echo 1. Import Postman Collection:
 echo    - Open Postman
 echo    - File ^> Import
-echo    - Select: postman-collection.json
+echo    - Select: postman-collection-gateway.json
 echo.
-echo 2. Run Test Requests:
-echo    - Go to "Setup ^& Variables" ^> "Get test accounts"
+echo 2. Setup JWT Token:
+echo    - Go to "Setup ^& Variables" ^> "Generate JWT Token"
 echo    - Click Send
+echo.
+echo 3. Test API Through Gateway:
+echo    - Gateway URL: http://localhost:8080
+echo    - All requests must include: Authorization: Bearer ^<token^>
 echo    - Then test any API
 echo.
 

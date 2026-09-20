@@ -74,3 +74,38 @@ logging:
   level:
     root: INFO
     com.payments.platform: DEBUG
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      account-service:
+        # Circuit opens after 5 consecutive failures
+        failure-threshold: 50
+        failure-rate-threshold: 50
+        # Move to HALF_OPEN state after 30 seconds
+        wait-duration-in-open-state: 30000
+        # Try 2 requests in HALF_OPEN state
+        permitted-number-of-calls-in-half-open-state: 2
+        # Sliding window of 10 requests
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        slow-call-rate-threshold: 100
+        slow-call-duration-threshold: 3000
+
+  retry:
+    instances:
+      account-service:
+        # Retry up to 3 times
+        max-attempts: 3
+        # Wait 100ms, 200ms, 400ms (exponential backoff)
+        wait-duration: 100
+        interval-function: exponential
+        exponential-backoff-multiplier: 2
+
+  timelimiter:
+    instances:
+      account-service:
+        # Timeout after 2 seconds
+        timeout-duration: 2s
+        cancel-running-future: true

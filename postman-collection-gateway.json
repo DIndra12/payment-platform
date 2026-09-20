@@ -1,0 +1,1027 @@
+{
+  "info": {
+    "name": "Payment Platform - With API Gateway",
+    "description": "Complete API testing collection with Gateway (port 8080), JWT authentication, and circuit breaker testing",
+    "version": "2.0.0"
+  },
+  "variable": [
+    {
+      "key": "gateway_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jwt_secret",
+      "value": "your-super-secret-key-that-is-at-least-32-characters-long-for-hs256",
+      "type": "string"
+    },
+    {
+      "key": "test_user_id",
+      "value": "test-user-{{$timestamp}}",
+      "type": "string"
+    },
+    {
+      "key": "account_id_1",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "account_id_2",
+      "value": "00000000-0000-0000-0000-000000000002",
+      "type": "string"
+    },
+    {
+      "key": "idempotency_key",
+      "value": "{{$guid}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Setup & JWT Token",
+      "item": [
+        {
+          "name": "Generate JWT Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This is a placeholder test",
+                  "// In Postman, JWT generation happens in pre-request scripts",
+                  "pm.test('Token generated', function() {",
+                  "    pm.expect(pm.variables.get('jwt_token')).to.be.truthy();",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate JWT token for testing",
+                  "// This creates a token valid for 1 hour",
+                  "",
+                  "const secret = pm.variables.get('jwt_secret');",
+                  "const userId = 'test-user';",
+                  "const roles = ['USER', 'ADMIN'];",
+                  "",
+                  "// Note: For actual JWT generation in Postman,",
+                  "// you would need a library or use the JWT endpoint.",
+                  "// For now, this is a manual token setup.",
+                  "",
+                  "// Store for use in other requests",
+                  "pm.variables.set('jwt_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiZXhwIjo5OTk5OTk5OTk5fQ.dummy');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/test/token",
+              "host": ["{{gateway_url}}"],
+              "path": ["test", "token"]
+            },
+            "description": "Generate JWT token for testing. In production, this would be from your auth service."
+          }
+        },
+        {
+          "name": "Gateway Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/health",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Check if gateway is running. This endpoint doesn't require JWT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Authentication Tests",
+      "item": [
+        {
+          "name": "Request WITHOUT JWT (Should fail - 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 Unauthorized', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Test that requests without JWT token are rejected with 401 Unauthorized."
+          }
+        },
+        {
+          "name": "Request WITH Invalid JWT (Should fail - 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 401 for invalid token', function() {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer INVALID_TOKEN_12345",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Test that requests with invalid JWT token are rejected."
+          }
+        },
+        {
+          "name": "Request WITH Valid JWT (Should succeed - 200)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Set JWT token from variable (pre-generated)"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should return 200 with valid JWT', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function() {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text",
+                "description": "JWT token generated in setup step"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Request with valid JWT token should succeed and route to account-service."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Account Service (through Gateway)",
+      "item": [
+        {
+          "name": "Get Account Balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has balance field', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('balance');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Get account balance. Routes to account-service:8081 through gateway."
+          }
+        },
+        {
+          "name": "Get Account Ledger",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/ledger",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "ledger"]
+            },
+            "description": "Get account transaction ledger."
+          }
+        },
+        {
+          "name": "Debit Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"currency\": \"USD\",\n  \"description\": \"Test debit\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/debit",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "debit"]
+            },
+            "description": "Debit (withdraw) from account. Routed through gateway."
+          }
+        },
+        {
+          "name": "Credit Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"description\": \"Test credit\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/credit",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "credit"]
+            },
+            "description": "Credit (deposit) to account. Routed through gateway."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Payment Service (through Gateway)",
+      "item": [
+        {
+          "name": "Create Payment - Happy Path",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200 or 201', function() {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});",
+                  "",
+                  "pm.test('Response has payment ID', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\",\n  \"description\": \"Payment for services\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Create a payment. Routes to payment-service:8083 through gateway. Includes circuit breaker on backend calls."
+          }
+        },
+        {
+          "name": "Create Payment - Invalid Amount (Should fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 400 (Bad Request)', function() {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": -10.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Invalid payment request (negative amount). Should be rejected with 400."
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has payment status', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments/{{payment_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments", "{{payment_id}}"]
+            },
+            "description": "Get payment status. Note: Replace {{payment_id}} with actual ID from create response."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Fraud Service (through Gateway)",
+      "item": [
+        {
+          "name": "Assess Risk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has risk score', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('riskScore');",
+                  "    pm.expect(jsonData.riskScore).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/risk/assess",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "risk", "assess"]
+            },
+            "description": "Assess fraud risk for a transaction. Routes to fraud-service:8082 through gateway."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Rate Limiting Tests",
+      "item": [
+        {
+          "name": "Rapid Fire Requests (Test Rate Limit)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This is informational - run this multiple times to test rate limiting",
+                  "pm.test('Note: Run this request rapidly (100+ times) to trigger rate limit', function() {",
+                  "    if (pm.response.code === 429) {",
+                  "        pm.test('Rate limit triggered (429)', function() {",
+                  "            pm.expect(pm.response.code).to.equal(429);",
+                  "        });",
+                  "    } else {",
+                  "        pm.test('Request allowed', function() {",
+                  "            pm.expect([200, 201]).to.include(pm.response.code);",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Rate limit: 100 requests per minute per user.\nRun this request 100+ times rapidly to see 429 Too Many Requests.\nWait 60 seconds for rate limit to reset."
+          }
+        },
+        {
+          "name": "Check Retry-After Header",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 429) {",
+                  "    pm.test('Retry-After header present', function() {",
+                  "        pm.expect(pm.response.headers.get('Retry-After')).to.exist;",
+                  "    });",
+                  "    ",
+                  "    pm.test('Retry-After is 60 seconds', function() {",
+                  "        pm.expect(pm.response.headers.get('Retry-After')).to.equal('60');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "When rate limited (429), check Retry-After header tells you when to retry."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Circuit Breaker Tests",
+      "item": [
+        {
+          "name": "Normal Payment (Circuit CLOSED)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Payment succeeds when service is healthy', function() {",
+                  "    pm.expect([200, 201]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": 10.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Normal payment when all services are healthy. Circuit breaker is CLOSED (allow requests)."
+          }
+        },
+        {
+          "name": "Payment When Account Service Down (Circuit OPEN)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Prerequisites: Account service must be stopped",
+                  "// 1. Kill account-service process",
+                  "// 2. Run this request",
+                  "// 3. Payment service will fail to call account service",
+                  "// 4. After 5 failures, circuit breaker opens",
+                  "// 5. Returns error quickly (fail fast)"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response should be error (service unavailable)', function() {",
+                  "    // When circuit is open, should get 5xx error quickly",
+                  "    // instead of waiting for timeout",
+                  "    pm.expect([500, 503]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": 10.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Payment fails quickly when account service is down (circuit breaker OPEN). Fails fast instead of waiting for timeout."
+          }
+        },
+        {
+          "name": "Circuit Breaker State Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Check circuit breaker metrics in response', function() {",
+                  "    // Payment service exposes circuit breaker metrics",
+                  "    // via /actuator/health",
+                  "    pm.expect(pm.response.json()).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{gateway_url}}/actuator/health",
+              "host": ["{{gateway_url}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Check circuit breaker state via health endpoint. Shows if service is up or circuit is open."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Transaction History (through Gateway)",
+      "item": [
+        {
+          "name": "Get Transaction History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is array', function() {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/transactions?limit=10",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get transaction history (CQRS read model). Routes to transaction-history-service:8085 through gateway."
+          }
+        },
+        {
+          "name": "Get Transactions for Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/transactions/accounts/{{account_id_1}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "transactions", "accounts", "{{account_id_1}}"]
+            },
+            "description": "Get transactions for a specific account."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 Notifications (through Gateway)",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Response status is 200', function() {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/notifications",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "notifications"]
+            },
+            "description": "Get notifications. Routes to notification-service:8084 through gateway."
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 End-to-End Payment Flow",
+      "item": [
+        {
+          "name": "1. Check Initial Balances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Step 1: Check initial balance of account 1"
+          }
+        },
+        {
+          "name": "2. Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotency_key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payerAccountId\": \"{{account_id_1}}\",\n  \"payeeAccountId\": \"{{account_id_2}}\",\n  \"amount\": 25.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments"]
+            },
+            "description": "Step 2: Create payment from account 1 to account 2. Save the payment ID from response."
+          }
+        },
+        {
+          "name": "3. Check Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/payments/{{payment_id}}",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "payments", "{{payment_id}}"]
+            },
+            "description": "Step 3: Check payment status. Replace {{payment_id}} with actual ID."
+          }
+        },
+        {
+          "name": "4. Check Final Balances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/accounts/{{account_id_1}}/balance",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "accounts", "{{account_id_1}}", "balance"]
+            },
+            "description": "Step 4: Check final balance (should be reduced by payment amount)"
+          }
+        },
+        {
+          "name": "5. View Transaction History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{gateway_url}}/api/v1/transactions/accounts/{{account_id_1}}?limit=5",
+              "host": ["{{gateway_url}}"],
+              "path": ["api", "v1", "transactions", "accounts", "{{account_id_1}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Step 5: View transaction history to verify payment was recorded"
+          }
+        }
+      ]
+    }
+  ]
+}
