@@ -54,11 +54,11 @@ class PaymentOrchestrationAcceptanceTest {
         var payeeAccountId = UUID.randomUUID();
         var idempotencyKey = UUID.randomUUID().toString();
 
-        // Stub Fraud Service
+        // Stub Fraud Service - complete response with all required fields
         stubFor(post(urlEqualTo("/api/v1/risk/evaluate"))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
-                        .withBody("{\"decision\": \"APPROVE\"}")));
+                        .withBody("{\"riskScore\": 10, \"decision\": \"APPROVE\", \"reasons\": [\"Low risk score\"]}")));
 
         // Stub Account Service
         stubFor(post(urlMatching("/api/v1/accounts/.*/debit"))
