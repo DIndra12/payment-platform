@@ -1,13 +1,38 @@
 {
   "info": {
-    "name": "Payment Platform - With API Gateway",
-    "description": "Complete API testing collection with Gateway (port 8080), JWT authentication, and circuit breaker testing",
-    "version": "2.0.0"
+    "name": "Payment Platform - With Keycloak OAuth2",
+    "description": "Complete API testing collection with Gateway (port 8080), Keycloak OAuth2 authentication, and circuit breaker testing",
+    "version": "3.0.0"
   },
   "variable": [
     {
       "key": "gateway_url",
       "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "keycloak_url",
+      "value": "http://localhost:8090",
+      "type": "string"
+    },
+    {
+      "key": "keycloak_realm",
+      "value": "payment-platform",
+      "type": "string"
+    },
+    {
+      "key": "keycloak_client_id",
+      "value": "payment-api",
+      "type": "string"
+    },
+    {
+      "key": "keycloak_username",
+      "value": "test-user",
+      "type": "string"
+    },
+    {
+      "key": "keycloak_password",
+      "value": "password123",
       "type": "string"
     },
     {
@@ -43,53 +68,79 @@
   ],
   "item": [
     {
-      "name": "01 Setup & JWT Token",
+      "name": "01 Setup & OAuth2 Token (Keycloak)",
       "item": [
         {
-          "name": "Generate JWT Token",
+          "name": "Get Keycloak OAuth2 Token",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "// This is a placeholder test",
-                  "// In Postman, JWT generation happens in pre-request scripts",
-                  "pm.test('Token generated', function() {",
+                  "pm.test('Keycloak token received', function() {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.variables.set('jwt_token', jsonData.access_token);",
+                  "});",
+                  "",
+                  "// Save for debugging",
+                  "pm.test('Token saved to jwt_token variable', function() {",
                   "    pm.expect(pm.variables.get('jwt_token')).to.be.truthy();",
                   "});"
-                ]
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "// Generate JWT token for testing",
-                  "// This creates a token valid for 1 hour",
-                  "",
-                  "const secret = pm.variables.get('jwt_secret');",
-                  "const userId = 'test-user';",
-                  "const roles = ['USER', 'ADMIN'];",
-                  "",
-                  "// Note: For actual JWT generation in Postman,",
-                  "// you would need a library or use the JWT endpoint.",
-                  "// For now, this is a manual token setup.",
-                  "",
-                  "// Store for use in other requests",
-                  "pm.variables.set('jwt_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJyb2xlcyI6WyJVU0VSIiwiQURNSU4iXSwiZXhwIjo5OTk5OTk5OTk5fQ.dummy');"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{keycloak_client_id}}"
+                },
+                {
+                  "key": "username",
+                  "value": "{{keycloak_username}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{keycloak_password}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{keycloak_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token",
+              "host": ["{{keycloak_url}}"],
+              "path": ["realms", "{{keycloak_realm}}", "protocol", "openid-connect", "token"]
+            },
+            "description": "Get OAuth2 token from Keycloak using Resource Owner Password Credentials flow. This token is valid for 1 hour and will be stored in jwt_token variable."
+          }
+        },
+        {
+          "name": "Keycloak Health Check",
+          "request": {
+            "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{gateway_url}}/test/token",
-              "host": ["{{gateway_url}}"],
-              "path": ["test", "token"]
+              "raw": "{{keycloak_url}}/health/ready",
+              "host": ["{{keycloak_url}}"],
+              "path": ["health", "ready"]
             },
-            "description": "Generate JWT token for testing. In production, this would be from your auth service."
+            "description": "Check if Keycloak is running and ready to issue tokens."
           }
         },
         {

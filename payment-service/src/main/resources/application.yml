@@ -66,6 +66,11 @@ management:
       show-details: always
       probes:
         enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
   metrics:
     tags:
       application: ${spring.application.name}
@@ -80,7 +85,7 @@ resilience4j:
   circuitbreaker:
     instances:
       account-service:
-        # Circuit opens after 5 consecutive failures
+        # Circuit opens after 50% failure rate
         failure-threshold: 50
         failure-rate-threshold: 50
         # Move to HALF_OPEN state after 30 seconds
@@ -88,6 +93,17 @@ resilience4j:
         # Try 2 requests in HALF_OPEN state
         permitted-number-of-calls-in-half-open-state: 2
         # Sliding window of 10 requests
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        slow-call-rate-threshold: 100
+        slow-call-duration-threshold: 3000
+
+      fraud-service:
+        # Same resilience as account-service
+        failure-threshold: 50
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30000
+        permitted-number-of-calls-in-half-open-state: 2
         sliding-window-size: 10
         minimum-number-of-calls: 5
         slow-call-rate-threshold: 100
@@ -103,9 +119,21 @@ resilience4j:
         interval-function: exponential
         exponential-backoff-multiplier: 2
 
+      fraud-service:
+        # Same retry strategy as account-service
+        max-attempts: 3
+        wait-duration: 100
+        interval-function: exponential
+        exponential-backoff-multiplier: 2
+
   timelimiter:
     instances:
       account-service:
+        # Timeout after 2 seconds
+        timeout-duration: 2s
+        cancel-running-future: true
+
+      fraud-service:
         # Timeout after 2 seconds
         timeout-duration: 2s
         cancel-running-future: true

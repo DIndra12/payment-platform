@@ -12,13 +12,14 @@ This guide will get you oriented in **5 minutes**.
 
 A **payment platform** with:
 - ✅ 5 independent microservices
-- ✅ API Gateway (JWT auth + rate limiting)
+- ✅ API Gateway with **Keycloak OAuth2** authentication + rate limiting
 - ✅ Circuit breaker pattern (resilience)
 - ✅ Saga pattern for distributed transactions
 - ✅ 62 automated tests (100% coverage)
 - ✅ Production-ready code
 
-**Status:** Phase 1 & 2 complete (50% of coding phase done)
+**Status:** Phase 1 & 2 complete (50% of coding phase done)  
+**Auth:** Migrated to Keycloak (OAuth2) for enterprise security ✅ 2026-09-21
 
 ---
 
@@ -51,24 +52,39 @@ API Gateway (Port 8080)
 - Maven (included via mvnw)
 ```
 
-### Step 2: Start All Services
+### Step 2: Start All Services (including Keycloak)
 ```bash
 cd C:\coding\payment-platform
 start-all.bat
 
 # Wait ~60 seconds for services to start
+# Services: PostgreSQL, Kafka, Keycloak, API Gateway, Account, Fraud, Payment, Notification, Transaction History
 ```
 
-### Step 3: Test via Postman
+### Step 3: Initialize Keycloak OAuth2 Realm (One-time Setup)
+```bash
+# Linux/Mac:
+bash infrastructure/keycloak/init-keycloak.sh
+
+# Windows PowerShell (if bash not available):
+# Manually create realm at: http://localhost:8090 → Admin Console (admin/admin)
+# Or run: docker exec payments-keycloak bash /opt/keycloak/init-keycloak.sh
+```
+
+This creates test users:
+- `test-user` / `password123` (USER role)
+- `admin-user` / `password123` (ADMIN role)
+
+### Step 4: Test via Postman
 ```
 1. Open Postman
 2. File > Import > postman-collection-gateway.json
-3. Go to: Setup & Variables > Generate JWT Token
-4. Click: Send
+3. Go to: 01 Setup & OAuth2 Token > Get Keycloak OAuth2 Token
+4. Click: Send (auto-fetches token from Keycloak)
 5. Test any API (all through gateway on http://localhost:8080)
 ```
 
-**That's it!** You're running all 7 services. ✅
+**That's it!** You're running all 7 services with Keycloak OAuth2. ✅
 
 ---
 
@@ -154,9 +170,9 @@ curl http://localhost:8085/actuator/health     # Transaction
 | Transaction History | 8085 | Query transactions (read model) |
 
 **Infrastructure:**
-- PostgreSQL: 5432
-- Kafka: 9094
-- Keycloak: 8080 (HTTP, identity provider)
+- PostgreSQL: 5432 (database)
+- Kafka: 9094 (message broker)
+- **Keycloak: 8090** (OAuth2 identity provider) ← NEW!
 
 ---
 
@@ -200,12 +216,20 @@ A **resilience pattern** that:
 - Recovers automatically after 30s
 - Prevents cascading failures
 
-### JWT Authentication
+### JWT Authentication with Keycloak OAuth2
 **Stateless tokens** that:
-- Prove who you are
+- Prove who you are (issued by Keycloak)
 - Include your roles/permissions
-- Can't be forged (signed with secret key)
+- Can't be forged (signed with Keycloak's private key)
 - Expire after 1 hour
+- **NEW:** Validated via Keycloak's JWKS public key endpoint
+
+**Why Keycloak?**
+- Enterprise security (RSA keys, not shared secrets)
+- Automatic key rotation
+- Token revocation capability
+- User federation & social login ready
+- Audit logging of all auth events
 
 ### Rate Limiting
 **Token bucket algorithm** that:

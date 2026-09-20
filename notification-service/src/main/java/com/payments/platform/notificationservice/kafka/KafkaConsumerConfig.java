@@ -4,13 +4,17 @@ import com.payments.platform.notificationservice.dto.PaymentCompletedEvent;
 import com.payments.platform.notificationservice.dto.PaymentFailedEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
@@ -30,12 +34,24 @@ import java.util.Map;
  */
 @Configuration
 public class KafkaConsumerConfig {
+    private static final Logger log = LoggerFactory.getLogger(KafkaConsumerConfig.class);
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
+
+    /**
+     * Error handler that prevents Kafka consumer crashes on poison messages.
+     * Logs errors and continues processing instead of stopping the consumer.
+     */
+    private DefaultErrorHandler errorHandler() {
+        return new DefaultErrorHandler((record, exception) -> {
+            log.error("Kafka consumer error for topic={}, partition={}, offset={}: {}",
+                record.topic(), record.partition(), record.offset(), exception.getMessage(), exception);
+        });
+    }
 
     private Map<String, Object> baseConsumerConfig() {
         Map<String, Object> config = new HashMap<>();
@@ -72,6 +88,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(paymentCompletedConsumerFactory());
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.setCommonErrorHandler(errorHandler()); // Route errors to DLT
         return factory;
     }
 
@@ -94,6 +111,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(paymentFailedConsumerFactory());
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.setCommonErrorHandler(errorHandler()); // Route errors to DLT
         return factory;
     }
 }

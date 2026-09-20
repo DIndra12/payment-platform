@@ -23,7 +23,16 @@ logging:
     org.springframework.cloud.gateway: DEBUG
     io.jsonwebtoken: DEBUG
 
-# JWT Configuration
+# Keycloak OAuth2 Configuration
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://keycloak:8080/realms/payment-platform"
+          jwk-set-uri: "http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs"
+
+# JWT Configuration (for token generation in tests)
 jwt:
   secret: "your-super-secret-key-that-is-at-least-32-characters-long-for-hs256"
   expiration: 3600000  # 1 hour in milliseconds
@@ -37,3 +46,10 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true

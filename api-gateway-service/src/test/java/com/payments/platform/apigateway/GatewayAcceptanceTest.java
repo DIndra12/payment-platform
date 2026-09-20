@@ -1,13 +1,12 @@
 package com.payments.platform.apigateway;
 
-import com.payments.platform.apigateway.util.JwtUtil;
+import com.payments.platform.apigateway.util.TestTokenGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.Arrays;
@@ -29,22 +28,14 @@ class GatewayAcceptanceTest {
     @Autowired
     private WebTestClient webTestClient;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
     private String userToken;
     private String adminToken;
 
     @BeforeEach
     void setUp() {
-        // Setup JWT
-        ReflectionTestUtils.setField(jwtUtil, "secret",
-                "test-secret-key-that-is-long-enough-for-hs256");
-        ReflectionTestUtils.setField(jwtUtil, "expiration", 3600000);
-
         // Generate tokens with different roles
-        userToken = jwtUtil.generateToken("user123", Arrays.asList("USER"));
-        adminToken = jwtUtil.generateToken("admin456", Arrays.asList("ADMIN"));
+        userToken = TestTokenGenerator.generateToken("user123", "USER");
+        adminToken = TestTokenGenerator.generateToken("admin456", "ADMIN");
     }
 
     // ==================== Scenario 1: Authentication Flow ====================

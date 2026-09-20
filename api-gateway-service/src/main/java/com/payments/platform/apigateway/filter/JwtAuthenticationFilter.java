@@ -1,7 +1,7 @@
 package com.payments.platform.apigateway.filter;
 
 import com.payments.platform.apigateway.exception.JwtValidationException;
-import com.payments.platform.apigateway.util.JwtUtil;
+import com.payments.platform.apigateway.util.KeycloakTokenValidator;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +48,7 @@ import org.springframework.stereotype.Component;
 public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAuthenticationFilter.Config> {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private KeycloakTokenValidator tokenValidator;
 
     public JwtAuthenticationFilter() {
         super(Config.class);
@@ -85,11 +85,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 String token = authHeader.substring(7);
 
                 // 4. Validate token (this throws JwtValidationException if invalid)
-                Claims claims = jwtUtil.validateToken(token);
+                Claims claims = tokenValidator.validateToken(token);
 
                 // 5. Extract user info
-                String userId = jwtUtil.getUserId(claims);
-                var roles = jwtUtil.getRoles(claims);
+                String userId = claims.getSubject();
+                var roles = extractRoles(claims);
 
                 log.debug("Request authenticated for user: {}", userId);
 
@@ -115,6 +115,14 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 return exchange.getResponse().setComplete();
             }
         };
+    }
+
+    private java.util.List<String> extractRoles(Claims claims) {
+        Object rolesObj = claims.get("roles");
+        if (rolesObj instanceof java.util.List) {
+            return (java.util.List<String>) rolesObj;
+        }
+        return java.util.Collections.emptyList();
     }
 
     // Configuration class (empty for now, can be extended later for dynamic config)
