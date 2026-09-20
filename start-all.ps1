@@ -126,7 +126,7 @@ function Start-Docker-Infrastructure {
         Start-Sleep -Seconds 2
     }
 
-    Print-Step "Starting docker-compose services (PostgreSQL, Kafka, Keycloak)..."
+    Print-Step "Starting docker-compose services (PostgreSQL, Kafka, Keycloak)"
     & docker-compose -f "$DockerComposeFile" up -d
 
     Print-Step "Waiting for PostgreSQL to be ready..."
@@ -253,7 +253,7 @@ function Verify-Services {
 function Print-Summary {
     Print-Header "Setup Complete!"
 
-    Write-Host "$Green`All services are now running:$Reset"
+    Write-Host "$Green All services are now running: $Reset"
     Write-Host ""
     foreach ($Service in $Services) {
         $ServiceName = $Service.Name
@@ -262,13 +262,13 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Green`Infrastructure:$Reset"
+    Write-Host "$Green Infrastructure: $Reset"
     Write-Host "  ✓ PostgreSQL:          localhost:5432"
     Write-Host "  ✓ Kafka:               localhost:9094"
     Write-Host "  ✓ Keycloak:            http://localhost:8080"
     Write-Host ""
 
-    Write-Host "$Yellow`Next Steps:$Reset"
+    Write-Host "$Yellow Next Steps: $Reset"
     Write-Host ""
     Write-Host "1. Import Postman Collection:"
     Write-Host "   - Open Postman"
@@ -276,7 +276,7 @@ function Print-Summary {
     Write-Host "   - Select: postman-collection.json"
     Write-Host ""
     Write-Host "2. Run Test Requests:"
-    Write-Host "   - Go to 'Setup & Variables' → 'Get test accounts (Setup)'"
+    Write-Host "   - Go to 'Setup & Variables' > 'Get test accounts (Setup)'"
     Write-Host "   - Click Send"
     Write-Host "   - Then run any request to test the APIs"
     Write-Host ""
@@ -288,7 +288,7 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Yellow`Useful Commands:$Reset"
+    Write-Host "$Yellow Useful Commands: $Reset"
     Write-Host ""
     Write-Host "  Stop all services:"
     Write-Host "    .\stop-all.ps1"
@@ -309,7 +309,7 @@ function Print-Summary {
 function Main {
     Print-Header "Payment Platform - Complete Startup"
 
-    Print-Step "Checking prerequisites..."
+    Print-Step "Checking prerequisites"
     Check-Docker-Installed
     Check-Docker-Running
 

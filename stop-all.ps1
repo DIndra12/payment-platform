@@ -118,7 +118,7 @@ function Stop-Docker {
 function Print-Summary {
     Print-Header "Shutdown Complete!"
 
-    Write-Host "$Green`All services have been stopped:$Reset"
+    Write-Host "$Green All services have been stopped: $Reset"
     Write-Host ""
     Write-Host "  ✓ Spring Boot services terminated"
     Write-Host "  ✓ Docker containers stopped"
@@ -127,7 +127,7 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Yellow`To restart services:$Reset"
+    Write-Host "$Yellow To restart services: $Reset"
     Write-Host ""
     if ($RemoveVolumes) {
         Write-Host "  .\start-all.ps1 -Clean"
@@ -137,7 +137,7 @@ function Print-Summary {
     }
     Write-Host ""
 
-    Write-Host "$Yellow`Useful commands:$Reset"
+    Write-Host "$Yellow Useful commands: $Reset"
     Write-Host ""
     Write-Host "  Start only Docker (no services):"
     Write-Host "    docker-compose up -d"
