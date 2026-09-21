@@ -27,6 +27,7 @@
         <logstash-logback.version>7.4</logstash-logback.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <testcontainers.version>1.21.4</testcontainers.version>
+        <opentelemetry.version>1.32.0</opentelemetry.version>
     </properties>
 
     <modules>
@@ -48,6 +49,16 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- Micrometer Tracing BOM: manages OpenTelemetry versions -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bom</artifactId>
+                <version>1.4.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Testcontainers BOM -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
