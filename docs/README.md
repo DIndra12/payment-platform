@@ -29,6 +29,13 @@ Start with your use case:
 |----------|------|---------|
 | [02-OBSERVABILITY-FLOW.md](02-OBSERVABILITY-FLOW.md) | 45 min | How OpenTelemetry, ELK, and Prometheus work end-to-end |
 
+### 🔐 Authentication
+**Setting up and managing Keycloak OAuth2/OIDC**
+
+| Document | Time | Purpose |
+|----------|------|---------|
+| [05-KEYCLOAK-SETUP.md](05-KEYCLOAK-SETUP.md) | 60 min | Complete Keycloak configuration, JWT validation, user management, and troubleshooting |
+
 ---
 
 ## 🎯 Choose Your Path
@@ -175,6 +182,28 @@ Start with your use case:
 
 ---
 
+### [05-KEYCLOAK-SETUP.md](05-KEYCLOAK-SETUP.md)
+**Keycloak Authentication & Authorization Setup (60 minutes)**
+- What Keycloak is and why we use it
+- OAuth2/OpenID Connect architecture
+- Realm and client configuration
+- User management and role-based access control
+- JWT token structure and validation
+- API Gateway integration
+- Testing authentication with Postman and curl
+- Troubleshooting authentication issues
+- Security best practices
+- Future enhancements (MFA, social login, LDAP)
+
+**Use when**:
+- Setting up authentication for the first time
+- Managing users and roles
+- Testing API requests with JWT tokens
+- Understanding how Keycloak integrates with the platform
+- Troubleshooting authentication failures
+
+---
+
 ## 🗂️ File Organization
 
 ```
@@ -184,7 +213,8 @@ docs/
 ├── 01-ARCHITECTURE-OVERVIEW.md        (System design)
 ├── 02-OBSERVABILITY-FLOW.md           (Tracing/logging/metrics)
 ├── 03-E2E-TESTING-VERIFICATION.md     (Detailed testing procedures)
-└── 04-E2E-TESTING-MASTER.md           (Master testing guide - START HERE)
+├── 04-E2E-TESTING-MASTER.md           (Master testing guide - START HERE)
+└── 05-KEYCLOAK-SETUP.md               (Authentication & authorization setup)
 ```
 
 ---
@@ -252,10 +282,19 @@ For Observability Deep-Dive:
 - ✓ 6 microservices (saga pattern, resilience)
 - ✓ Database per service (PostgreSQL)
 - ✓ Event streaming (Kafka)
-- ✓ Authentication (Keycloak)
+- ✓ Authentication (Keycloak OAuth2/OIDC)
 - ✓ Distributed transactions (Outbox pattern)
 - ✓ Resilience (Circuit breaker, retries)
 - ✓ Phase roadmap (Phase 1-5)
+
+### Authentication & Authorization
+- ✓ Keycloak realm & client setup
+- ✓ JWT token validation
+- ✓ User & role management
+- ✓ Role-based access control (RBAC)
+- ✓ OAuth2/OpenID Connect flows
+- ✓ API Gateway integration
+- ✓ Testing with JWT tokens
 
 ### Observability
 - ✓ Distributed tracing (OpenTelemetry + Jaeger-ready)
@@ -342,26 +381,30 @@ Infrastructure:
 ### Developer (New to Project)
 1. 00-QUICKSTART.md (10 min)
 2. 01-ARCHITECTURE-OVERVIEW.md (30 min)
-3. 04-E2E-TESTING-MASTER.md (45 min)
-4. **Total**: 85 minutes to productive
+3. 05-KEYCLOAK-SETUP.md (30 min) - Quick start section
+4. 04-E2E-TESTING-MASTER.md (45 min)
+5. **Total**: 115 minutes to productive
 
 ### QA/Tester
 1. 00-QUICKSTART.md (10 min)
-2. 04-E2E-TESTING-MASTER.md (45 min)
-3. 03-E2E-TESTING-VERIFICATION.md (60 min)
-4. **Total**: 115 minutes for complete testing
+2. 05-KEYCLOAK-SETUP.md (20 min) - Testing authentication section
+3. 04-E2E-TESTING-MASTER.md (45 min)
+4. 03-E2E-TESTING-VERIFICATION.md (60 min)
+5. **Total**: 135 minutes for complete testing
 
 ### DevOps/SRE
 1. 01-ARCHITECTURE-OVERVIEW.md (30 min)
-2. 02-OBSERVABILITY-FLOW.md (45 min)
-3. 04-E2E-TESTING-MASTER.md (45 min)
-4. **Total**: 120 minutes for operational readiness
+2. 05-KEYCLOAK-SETUP.md (40 min) - Setup & troubleshooting sections
+3. 02-OBSERVABILITY-FLOW.md (45 min)
+4. 04-E2E-TESTING-MASTER.md (45 min)
+5. **Total**: 160 minutes for operational readiness
 
 ### Solutions Architect/Tech Lead
 1. 01-ARCHITECTURE-OVERVIEW.md (30 min)
-2. 04-E2E-TESTING-MASTER.md (45 min)
-3. Phase roadmap in 01-ARCHITECTURE-OVERVIEW.md
-4. **Total**: 75 minutes for architecture understanding
+2. 05-KEYCLOAK-SETUP.md (30 min) - Architecture & future enhancements
+3. 04-E2E-TESTING-MASTER.md (45 min)
+4. Phase roadmap in 01-ARCHITECTURE-OVERVIEW.md
+5. **Total**: 105 minutes for architecture understanding
 
 ---
 
