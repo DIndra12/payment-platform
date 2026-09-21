@@ -36,6 +36,15 @@ Start with your use case:
 |----------|------|---------|
 | [05-KEYCLOAK-SETUP.md](05-KEYCLOAK-SETUP.md) | 60 min | Complete Keycloak configuration, JWT validation, user management, and troubleshooting |
 
+### 🚀 Advanced Implementation Paths
+**Detailed technical implementation for Phase 2+ features**
+
+| Document | Time | Difficulty | Purpose |
+|----------|------|-----------|---------|
+| [06-OBSERVABILITY-IMPLEMENTATION.md](06-OBSERVABILITY-IMPLEMENTATION.md) | 2-3 weeks | Medium | Distributed tracing (Jaeger), centralized logging (ELK), metrics (Prometheus/Grafana) |
+| [07-RESILIENCE-ENGINEERING.md](07-RESILIENCE-ENGINEERING.md) | 3-4 weeks | Hard | Event sourcing, bulkhead isolation, chaos engineering, compensating transactions |
+| [08-PERFORMANCE-OPTIMIZATION.md](08-PERFORMANCE-OPTIMIZATION.md) | 2-3 weeks | Medium | Redis caching, database optimization, load testing, profiling |
+
 ---
 
 ## 🎯 Choose Your Path
@@ -204,17 +213,85 @@ Start with your use case:
 
 ---
 
+### [06-OBSERVABILITY-IMPLEMENTATION.md](06-OBSERVABILITY-IMPLEMENTATION.md)
+**Phase 2a: Observability Deep Dive Implementation (2-3 weeks)**
+- Distributed tracing with Jaeger (OpenTelemetry integration)
+- Correlation ID propagation through services
+- Custom span annotations for business operations
+- Centralized logging with ELK Stack (Elasticsearch, Kibana, Fluent Bit)
+- Metrics collection with Prometheus
+- Grafana dashboard creation and alerting
+- Performance baselines and monitoring
+- Production debugging workflows
+
+**Skills gained**: Production troubleshooting, performance analysis, incident investigation, observability architecture
+
+**Use when**:
+- Implementing distributed tracing across services
+- Setting up centralized logging infrastructure
+- Creating custom business metrics
+- Building production monitoring and alerting
+- Deep-diving into observability patterns
+
+---
+
+### [07-RESILIENCE-ENGINEERING.md](07-RESILIENCE-ENGINEERING.md)
+**Phase 2b: Resilience Engineering Implementation (3-4 weeks)**
+- Event sourcing for immutable audit trails
+- State reconstruction and temporal queries
+- Bulkhead pattern for thread pool isolation
+- Chaos engineering testing
+- Compensating transactions (saga rollback)
+- Failure recovery patterns
+- Event store design and querying
+
+**Skills gained**: Fault-tolerant system design, distributed transaction coordination, chaos testing, audit compliance
+
+**Use when**:
+- Building event-sourced systems
+- Implementing advanced resilience patterns
+- Creating chaos engineering tests
+- Designing compensating transactions
+- Building audit trails for compliance
+
+---
+
+### [08-PERFORMANCE-OPTIMIZATION.md](08-PERFORMANCE-OPTIMIZATION.md)
+**Phase 2c: Performance Optimization Implementation (2-3 weeks)**
+- Redis caching strategies
+- Cache invalidation patterns
+- Database query optimization with indexes
+- Connection pool tuning
+- Load testing with Apache JMeter
+- Performance profiling with JProfiler
+- Performance baselines and monitoring
+- Horizontal scaling considerations
+
+**Skills gained**: Performance optimization, database tuning, load testing, scalability analysis
+
+**Use when**:
+- Implementing caching layer
+- Optimizing database queries
+- Running load tests and profiling
+- Tuning connection pools
+- Planning for horizontal scaling
+
+---
+
 ## 🗂️ File Organization
 
 ```
 docs/
-├── README.md                          ← You are here (index)
-├── 00-QUICKSTART.md                   (Quick reference)
-├── 01-ARCHITECTURE-OVERVIEW.md        (System design)
-├── 02-OBSERVABILITY-FLOW.md           (Tracing/logging/metrics)
-├── 03-E2E-TESTING-VERIFICATION.md     (Detailed testing procedures)
-├── 04-E2E-TESTING-MASTER.md           (Master testing guide - START HERE)
-└── 05-KEYCLOAK-SETUP.md               (Authentication & authorization setup)
+├── README.md                              ← You are here (index)
+├── 00-QUICKSTART.md                       (Quick reference)
+├── 01-ARCHITECTURE-OVERVIEW.md            (System design)
+├── 02-OBSERVABILITY-FLOW.md               (Tracing/logging/metrics)
+├── 03-E2E-TESTING-VERIFICATION.md         (Detailed testing procedures)
+├── 04-E2E-TESTING-MASTER.md               (Master testing guide - START HERE)
+├── 05-KEYCLOAK-SETUP.md                   (Authentication & authorization setup)
+├── 06-OBSERVABILITY-IMPLEMENTATION.md     (Phase 2a: Detailed implementation)
+├── 07-RESILIENCE-ENGINEERING.md           (Phase 2b: Detailed implementation)
+└── 08-PERFORMANCE-OPTIMIZATION.md         (Phase 2c: Detailed implementation)
 ```
 
 ---
