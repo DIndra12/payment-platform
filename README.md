@@ -6,6 +6,19 @@ A complete, production-ready microservices payment processing system demonstrati
 
 ---
 
+## 📚 Documentation
+
+**→ [Start with docs/README.md](docs/README.md)** for comprehensive guides covering:
+- Quick start (10 min)
+- System architecture (30 min)
+- End-to-end testing (45 min)
+- Observability deep-dive (45 min)
+- Learning paths by role (developer, QA, DevOps, architect)
+
+All project documentation is maintained in the `docs/` folder. See [docs/README.md](docs/README.md) for the complete index.
+
+---
+
 ## 📋 Table of Contents
 
 1. [Quick Start (5 minutes)](#quick-start)
