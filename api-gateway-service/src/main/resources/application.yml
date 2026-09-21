@@ -37,12 +37,12 @@ jwt:
   secret: "your-super-secret-key-that-is-at-least-32-characters-long-for-hs256"
   expiration: 3600000  # 1 hour in milliseconds
 
-# Management endpoints for health checks
+# Management endpoints for health checks and metrics
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
@@ -53,3 +53,13 @@ management:
       enabled: true
     readinessState:
       enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Distributed Tracing Configuration
+management:
+  tracing:
+    sampling:
+      probability: 1.0
