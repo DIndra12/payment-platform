@@ -11,6 +11,7 @@ import com.payments.platform.accountservice.outbox.LedgerEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -99,5 +100,15 @@ public class AccountService {
     public Account getAccount(UUID accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountId));
+    }
+
+    @Transactional
+    public Account createAccount(UUID accountId) {
+        Account account = Account.builder()
+                .id(accountId)
+                .ownerName("Account-" + accountId)
+                .balance(BigDecimal.ZERO)
+                .build();
+        return accountRepository.save(account);
     }
 }

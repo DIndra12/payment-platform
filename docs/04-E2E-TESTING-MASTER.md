@@ -78,15 +78,22 @@ Core Services (6):
 ├─ notification-service (8084)
 └─ transaction-history-service (8085)
 
-Infrastructure (7):
+Infrastructure (8):
 ├─ postgres (5432) - Databases
 ├─ kafka (9094) - Event streaming
-├─ keycloak (8090) - Auth
+├─ keycloak (8090) - Auth (external) / 8080 (internal to containers)
+├─ keycloak-init - Automated realm initialization
 ├─ elasticsearch (9200) - Logs
 ├─ kibana (5601) - Log dashboard
 ├─ prometheus (9090) - Metrics
 └─ grafana (3000) - Metrics dashboard
 ```
+
+**Note on Keycloak URLs**:
+- **External (from your machine)**: `http://localhost:8090`
+- **Internal (container-to-container)**: `http://keycloak:8080`
+- The `keycloak-init` service automatically sets up the realm, client, roles, and test users on startup
+
 
 ### 1.4 Existing Documentation
 
@@ -274,14 +281,18 @@ echo $TOKEN
 
 **Test sequence**:
 1. ✓ "Health Check" → 200 OK
-2. ✓ "Get Account Balance"
-   - Check balance for payer account
-   - Expected: Current balance (should be less after payment)
-3. ✓ "Get Account Ledger (Transaction History)"
+2. ✓ "Create Account"
+   - Create a new account with a specific accountId
+   - Expected: 201 Created, account initialized with zero balance
+   - **Note**: Required before testing debit/credit operations
+3. ✓ "Get Account Balance"
+   - Check balance for account
+   - Expected: 0.00 (newly created accounts start at zero)
+4. ✓ "Get Account Ledger (Transaction History)"
    - See all transactions for account
-   - Expected: Debit entry for the payment we made
-4. ✓ "Debit Account - Valid"
-   - Test account debit operation
+   - Expected: Empty (no transactions yet)
+5. ✓ "Debit Account - Valid"
+   - Test account debit operation (requires initial credit first)
    - Expected: 200 OK, balance decreases
 
 #### 4.4 Transaction History Service

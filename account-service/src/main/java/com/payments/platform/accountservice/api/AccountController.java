@@ -18,6 +18,12 @@ public class AccountController {
         this.accountService = accountService;
     }
 
+    @PostMapping("/{accountId}")
+    public ResponseEntity<AccountResponse> createAccount(@PathVariable UUID accountId) {
+        Account account = accountService.createAccount(accountId);
+        return ResponseEntity.status(201).body(AccountResponse.from(account));
+    }
+
     @PostMapping("/{accountId}/debit")
     public ResponseEntity<LedgerResponse> debit(
             @PathVariable UUID accountId,
