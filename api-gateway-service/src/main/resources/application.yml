@@ -8,6 +8,8 @@ spring:
     name: api-gateway-service
   profiles:
     active: local
+  main:
+    web-application-type: reactive
 
   # Disable some autoconfiguration features we don't need
   autoconfigure:
@@ -16,21 +18,20 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 
-logging:
-  level:
-    root: INFO
-    com.payments.platform: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    io.jsonwebtoken: DEBUG
-
-# Keycloak OAuth2 Configuration
-spring:
+  # Keycloak OAuth2 Configuration
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: "http://keycloak:8080/realms/payment-platform"
           jwk-set-uri: "http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs"
+
+logging:
+  level:
+    root: INFO
+    com.payments.platform: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    io.jsonwebtoken: DEBUG
 
 # JWT Configuration (for token generation in tests)
 jwt:
