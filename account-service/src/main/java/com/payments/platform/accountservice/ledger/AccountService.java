@@ -102,6 +102,11 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountId));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Account> findAccount(UUID accountId) {
+        return accountRepository.findById(accountId);
+    }
+
     @Transactional
     public Account createAccount(UUID accountId) {
         Account account = Account.builder()

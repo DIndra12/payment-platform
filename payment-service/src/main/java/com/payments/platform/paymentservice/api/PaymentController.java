@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
@@ -27,5 +29,18 @@ public class PaymentController {
             @RequestHeader("Idempotency-Key") String idempotencyKey) {
         PaymentResponse response = paymentOrchestratorService.processPayment(request, idempotencyKey);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    /**
+     * Get the current status of a payment.
+     *
+     * @param paymentId payment ID returned by POST /api/v1/payments
+     * @return 200 with the payment, or 404 if it does not exist
+     */
+    @GetMapping("/{paymentId}")
+    public ResponseEntity<PaymentResponse> getPayment(@PathVariable UUID paymentId) {
+        return paymentOrchestratorService.getPayment(paymentId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

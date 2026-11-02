@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -157,6 +158,16 @@ public class PaymentOrchestratorService {
             // silently missing event, so this log line is worth alerting on.
             log.error("Failed to create outbox event {} for payment {}", eventType, payment.getId(), e);
         }
+    }
+
+    /**
+     * Look up a payment's current status.
+     *
+     * @param paymentId payment ID returned when the payment was initiated
+     * @return the payment, or empty if no payment has that ID
+     */
+    public Optional<PaymentResponse> getPayment(UUID paymentId) {
+        return paymentRepository.findById(paymentId).map(this::mapToResponse);
     }
 
     private PaymentResponse mapToResponse(Payment payment) {

@@ -23,8 +23,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "http://keycloak:8080/realms/payment-platform"
-          jwk-set-uri: "http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs"
+          issuer-uri: "${KEYCLOAK_ISSUER_URI:http://localhost:8090/realms/payment-platform}"
+          jwk-set-uri: "${KEYCLOAK_JWK_SET_URI:http://localhost:8090/realms/payment-platform/protocol/openid-connect/certs}"
 
 logging:
   level:
@@ -32,6 +32,20 @@ logging:
     com.payments.platform: DEBUG
     org.springframework.cloud.gateway: DEBUG
     io.jsonwebtoken: DEBUG
+
+# Backend service URLs. Defaults match start-all (services on the host).
+# Set these env vars to Docker hostnames when the gateway runs in a container.
+services:
+  account:
+    url: ${ACCOUNT_SERVICE_URL:http://localhost:8081}
+  payment:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+  fraud:
+    url: ${FRAUD_SERVICE_URL:http://localhost:8082}
+  notification:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+  transaction-history:
+    url: ${TRANSACTION_HISTORY_SERVICE_URL:http://localhost:8085}
 
 # JWT Configuration (for token generation in tests)
 jwt:

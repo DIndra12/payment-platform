@@ -75,8 +75,8 @@ curl -X POST http://localhost:8083/api/v1/payments \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: test-payment-1" \
   -d '{
-    "payerAccountId": "00000000-0000-0000-0000-000000000001",
-    "payeeAccountId": "00000000-0000-0000-0000-000000000002",
+    "payerAccountId": "11111111-1111-1111-1111-111111111111",
+    "payeeAccountId": "22222222-2222-2222-2222-222222222222",
     "amount": 100.00,
     "currency": "INR"
   }'
@@ -482,8 +482,8 @@ curl -X POST http://localhost:8083/api/v1/payments \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: test-payment-1" \
   -d '{
-    "payerAccountId": "00000000-0000-0000-0000-000000000001",
-    "payeeAccountId": "00000000-0000-0000-0000-000000000002",
+    "payerAccountId": "11111111-1111-1111-1111-111111111111",
+    "payeeAccountId": "22222222-2222-2222-2222-222222222222",
     "amount": 100.00,
     "currency": "INR"
   }'
@@ -646,8 +646,8 @@ curl -X POST http://localhost:8083/api/v1/payments \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: unique-key-123" \
   -d '{
-    "payerAccountId": "00000000-0000-0000-0000-000000000001",
-    "payeeAccountId": "00000000-0000-0000-0000-000000000002",
+    "payerAccountId": "11111111-1111-1111-1111-111111111111",
+    "payeeAccountId": "22222222-2222-2222-2222-222222222222",
     "amount": 500.50,
     "currency": "INR"
   }'
@@ -680,8 +680,8 @@ curl http://localhost:8083/api/v1/payments/a1b2c3d4-e5f6-47g8-h9i0-j1k2l3m4n5o6
   "status": "COMPLETED",
   "amount": 500.50,
   "currency": "INR",
-  "payerAccountId": "00000000-0000-0000-0000-000000000001",
-  "payeeAccountId": "00000000-0000-0000-0000-000000000002",
+  "payerAccountId": "11111111-1111-1111-1111-111111111111",
+  "payeeAccountId": "22222222-2222-2222-2222-222222222222",
   "createdAt": "2026-08-15T10:30:45Z",
   "updatedAt": "2026-08-15T10:30:47Z"
 }
@@ -695,13 +695,13 @@ curl http://localhost:8083/api/v1/payments/a1b2c3d4-e5f6-47g8-h9i0-j1k2l3m4n5o6
 
 **Request:**
 ```bash
-curl http://localhost:8081/api/v1/accounts/00000000-0000-0000-0000-000000000001/balance
+curl http://localhost:8081/api/v1/accounts/11111111-1111-1111-1111-111111111111/balance
 ```
 
 **Response:**
 ```json
 {
-  "accountId": "00000000-0000-0000-0000-000000000001",
+  "accountId": "11111111-1111-1111-1111-111111111111",
   "balance": 10000.00,
   "currency": "INR"
 }
@@ -713,13 +713,13 @@ curl http://localhost:8081/api/v1/accounts/00000000-0000-0000-0000-000000000001/
 
 **Request:**
 ```bash
-curl http://localhost:8081/api/v1/accounts/00000000-0000-0000-0000-000000000001/ledger
+curl http://localhost:8081/api/v1/accounts/11111111-1111-1111-1111-111111111111/ledger
 ```
 
 **Response:**
 ```json
 {
-  "accountId": "00000000-0000-0000-0000-000000000001",
+  "accountId": "11111111-1111-1111-1111-111111111111",
   "entries": [
     {
       "id": "entry-uuid-1",
@@ -841,7 +841,7 @@ curl "http://localhost:8085/api/v1/transactions/account/11111111-1111-1111-1111-
 curl -X POST http://localhost:8082/api/v1/risk/evaluate \
   -H "Content-Type: application/json" \
   -d '{
-    "payerAccountId": "00000000-0000-0000-0000-000000000001",
+    "payerAccountId": "11111111-1111-1111-1111-111111111111",
     "amount": 500.50,
     "currency": "INR"
   }'

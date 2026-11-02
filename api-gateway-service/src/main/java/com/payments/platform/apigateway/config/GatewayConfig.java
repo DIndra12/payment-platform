@@ -4,6 +4,7 @@ import com.payments.platform.apigateway.filter.JwtAuthenticationFilter;
 import com.payments.platform.apigateway.filter.RateLimitFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -48,6 +49,23 @@ public class GatewayConfig {
     @Autowired
     private RateLimitFilter rateLimitFilter;
 
+    // Backend URLs default to localhost because start-all runs the services on the host.
+    // Override (e.g. ACCOUNT_SERVICE_URL=http://account-service:8081) when running in containers.
+    @Value("${services.account.url:http://localhost:8081}")
+    private String accountServiceUrl;
+
+    @Value("${services.payment.url:http://localhost:8083}")
+    private String paymentServiceUrl;
+
+    @Value("${services.fraud.url:http://localhost:8082}")
+    private String fraudServiceUrl;
+
+    @Value("${services.notification.url:http://localhost:8084}")
+    private String notificationServiceUrl;
+
+    @Value("${services.transaction-history.url:http://localhost:8085}")
+    private String transactionHistoryServiceUrl;
+
     /**
      * Define all gateway routes
      *
@@ -74,7 +92,7 @@ public class GatewayConfig {
                                 .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config()))
                                 .filter(rateLimitFilter.apply(new RateLimitFilter.Config()))
                         )
-                        .uri("http://account-service:8081")
+                        .uri(accountServiceUrl)
                 )
 
                 // Route 2: Payment Service
@@ -84,7 +102,7 @@ public class GatewayConfig {
                                 .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config()))
                                 .filter(rateLimitFilter.apply(new RateLimitFilter.Config()))
                         )
-                        .uri("http://payment-service:8083")
+                        .uri(paymentServiceUrl)
                 )
 
                 // Route 3: Fraud Service
@@ -94,7 +112,7 @@ public class GatewayConfig {
                                 .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config()))
                                 .filter(rateLimitFilter.apply(new RateLimitFilter.Config()))
                         )
-                        .uri("http://fraud-service:8082")
+                        .uri(fraudServiceUrl)
                 )
 
                 // Route 4: Notification Service
@@ -104,7 +122,7 @@ public class GatewayConfig {
                                 .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config()))
                                 .filter(rateLimitFilter.apply(new RateLimitFilter.Config()))
                         )
-                        .uri("http://notification-service:8084")
+                        .uri(notificationServiceUrl)
                 )
 
                 // Route 5: Transaction History Service
@@ -114,7 +132,7 @@ public class GatewayConfig {
                                 .filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config()))
                                 .filter(rateLimitFilter.apply(new RateLimitFilter.Config()))
                         )
-                        .uri("http://transaction-history-service:8085")
+                        .uri(transactionHistoryServiceUrl)
                 )
 
                 // Route 6: Health/Actuator endpoints (no auth required)

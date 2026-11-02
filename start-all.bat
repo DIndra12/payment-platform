@@ -117,7 +117,7 @@ echo.
 echo Infrastructure:
 echo   [OK] PostgreSQL:                    localhost:5432
 echo   [OK] Kafka:                         localhost:9094
-echo   [OK] Keycloak:                      http://localhost:8080
+echo   [OK] Keycloak:                      http://localhost:8090
 echo.
 
 echo Next Steps:

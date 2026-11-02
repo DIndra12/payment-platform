@@ -9,7 +9,7 @@
 set -e
 
 # Ensure curl is available (Alpine Linux doesn't include it by default)
-if ! command -v curl &> /dev/null; then
+if ! command -v curl > /dev/null 2>&1; then
     echo "Installing curl..."
     apk add --no-cache curl || {
         echo "Failed to install curl"
@@ -28,7 +28,7 @@ echo "Keycloak URL: $KEYCLOAK_URL"
 
 # Wait for Keycloak to be ready
 echo "Waiting for Keycloak to be ready..."
-for i in {1..60}; do
+for i in $(seq 1 60); do
   # Try the health endpoint with better error handling
   HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" "$KEYCLOAK_URL/health/ready" 2>/dev/null)
   HTTP_CODE=$(echo "$HEALTH_RESPONSE" | tail -n1)
@@ -110,63 +110,54 @@ if [ -z "$CLIENT_UUID" ]; then
   echo "Using existing client UUID: $CLIENT_UUID"
 fi
 
-# Create test users
-echo "Creating test users..."
-
-# User 1: test-user with USER role
-echo "Creating user: test-user"
-curl -s -X POST \
-  "$KEYCLOAK_URL/admin/realms/$REALM/users" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{
-    "username": "test-user",
-    "firstName": "Test",
-    "lastName": "User",
-    "enabled": true,
-    "credentials": [{
-      "type": "password",
-      "value": "password123",
-      "temporary": false
-    }],
-    "clientRoles": {
-      "'$CLIENT_ID'": ["USER"]
-    }
-  }' || echo "User may already exist"
-
-# User 2: admin-user with ADMIN role
-echo "Creating user: admin-user"
-curl -s -X POST \
-  "$KEYCLOAK_URL/admin/realms/$REALM/users" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{
-    "username": "admin-user",
-    "firstName": "Admin",
-    "lastName": "User",
-    "enabled": true,
-    "credentials": [{
-      "type": "password",
-      "value": "password123",
-      "temporary": false
-    }],
-    "clientRoles": {
-      "'$CLIENT_ID'": ["ADMIN"]
-    }
-  }' || echo "User may already exist"
-
-# Create roles if they don't exist
+# Create realm roles first, so users can be mapped to them
 echo "Creating roles..."
 for ROLE in USER ADMIN SUPPORT; do
   curl -s -X POST \
     "$KEYCLOAK_URL/admin/realms/$REALM/roles" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
-    -d '{
-      "name": "'$ROLE'",
-      "enabled": true
-    }' || echo "Role $ROLE may already exist"
+    -d '{"name": "'$ROLE'"}' || echo "Role $ROLE may already exist"
 done
+
+# Create a test user and give it one realm role.
+# Keycloak 24's default user profile requires email/first/last name; without them
+# token requests fail with "Account is not fully set up".
+create_user() {
+  USERNAME=$1; FIRST=$2; LAST=$3; ROLE=$4
+  echo "Creating user: $USERNAME (role $ROLE)"
+  curl -s -X POST \
+    "$KEYCLOAK_URL/admin/realms/$REALM/users" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -d '{
+      "username": "'$USERNAME'",
+      "email": "'$USERNAME'@example.com",
+      "emailVerified": true,
+      "firstName": "'$FIRST'",
+      "lastName": "'$LAST'",
+      "enabled": true,
+      "requiredActions": [],
+      "credentials": [{"type": "password", "value": "password123", "temporary": false}]
+    }' || echo "User $USERNAME may already exist"
+
+  USER_ID=$(curl -s "$KEYCLOAK_URL/admin/realms/$REALM/users?username=$USERNAME&exact=true" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+  ROLE_JSON=$(curl -s "$KEYCLOAK_URL/admin/realms/$REALM/roles/$ROLE" \
+    -H "Authorization: Bearer $ADMIN_TOKEN")
+  if [ -n "$USER_ID" ]; then
+    curl -s -X POST \
+      "$KEYCLOAK_URL/admin/realms/$REALM/users/$USER_ID/role-mappings/realm" \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer $ADMIN_TOKEN" \
+      -d "[$ROLE_JSON]" || echo "Could not map role $ROLE to $USERNAME"
+  fi
+}
+
+echo "Creating test users..."
+create_user test-user Test User USER
+create_user admin-user Admin User ADMIN
+create_user support-user Support User SUPPORT
 
 echo ""
 echo "============================================"
