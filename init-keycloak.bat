@@ -21,6 +21,7 @@ echo [*] Waiting for Keycloak to be ready...
 echo.
 
 REM Run the init-keycloak.sh script in a Docker container
+REM The dos2unix conversion fixes Windows line endings (CRLF) to Unix (LF)
 docker run --rm ^
   --network payment-platform_default ^
   -e KEYCLOAK_URL=http://keycloak:8080 ^
@@ -28,7 +29,7 @@ docker run --rm ^
   -e KEYCLOAK_ADMIN_PASSWORD=admin ^
   -v "%~dp0infrastructure\keycloak:/scripts" ^
   alpine:latest ^
-  sh /scripts/init-keycloak.sh
+  sh -c "apk add --no-cache dos2unix && dos2unix /scripts/init-keycloak.sh && sh /scripts/init-keycloak.sh"
 
 if errorlevel 1 (
     echo.
