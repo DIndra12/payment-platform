@@ -9,11 +9,11 @@ echo.
 
 echo [*] Stopping Docker infrastructure...
 cd /d "%~dp0"
-docker-compose stop
+docker-compose down --remove-orphans
 if errorlevel 1 (
     echo [WARNING] Failed to stop docker-compose
 ) else (
-    echo [OK] Docker containers stopped
+    echo [OK] Docker containers stopped and cleaned up
 )
 
 echo.

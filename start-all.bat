@@ -29,7 +29,7 @@ echo.
 
 echo [*] Starting docker-compose services...
 cd /d "%~dp0"
-docker-compose up -d
+docker-compose up -d --remove-orphans
 if errorlevel 1 (
     echo [ERROR] Failed to start docker-compose
     pause
