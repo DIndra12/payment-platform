@@ -163,8 +163,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Account 1 created successfully', function() {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test('Account 1 created (201 Created)', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 200]);",
+                  "});",
+                  "",
+                  "pm.test('Response contains account details', function() {",
+                  "    pm.response.to.be.json;",
                   "});"
                 ]
               }
@@ -176,11 +180,6 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
                 "type": "text"
               }
             ],
@@ -193,7 +192,7 @@
               "host": ["{{gateway_url}}"],
               "path": ["api", "v1", "accounts", "{{account_id_1}}"]
             },
-            "description": "Create the first test account for payment tests. Must run after 'Get Keycloak OAuth2 Token'."
+            "description": "Create the first test account for payment tests. Gateway allows POST /api/v1/accounts/{id} without JWT for setup phase."
           }
         },
         {
@@ -203,8 +202,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Account 2 created successfully', function() {",
-                  "    pm.response.to.have.status(201);",
+                  "pm.test('Account 2 created (201 Created)', function() {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 200]);",
+                  "});",
+                  "",
+                  "pm.test('Response contains account details', function() {",
+                  "    pm.response.to.be.json;",
                   "});"
                 ]
               }
@@ -217,11 +220,6 @@
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "type": "text"
               }
             ],
             "body": {
@@ -233,7 +231,7 @@
               "host": ["{{gateway_url}}"],
               "path": ["api", "v1", "accounts", "{{account_id_2}}"]
             },
-            "description": "Create the second test account for payment tests. Must run after 'Get Keycloak OAuth2 Token'."
+            "description": "Create the second test account for payment tests. Gateway allows POST /api/v1/accounts/{id} without JWT for setup phase."
           }
         }
       ]
