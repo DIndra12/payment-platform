@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Keycloak Initialization Script
 # This script sets up:
@@ -7,6 +7,15 @@
 # 3. Test users with roles
 
 set -e
+
+# Ensure curl is available (Alpine Linux doesn't include it by default)
+if ! command -v curl &> /dev/null; then
+    echo "Installing curl..."
+    apk add --no-cache curl || {
+        echo "Failed to install curl"
+        exit 1
+    }
+fi
 
 KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8090}"
 ADMIN_USER="${KEYCLOAK_ADMIN:-admin}"
