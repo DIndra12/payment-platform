@@ -49,6 +49,23 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak-init:
+    image: curlimages/curl:latest
+    container_name: payments-keycloak-init
+    entrypoint: /bin/sh
+    command: /scripts/init-keycloak.sh
+    volumes:
+      - ./infrastructure/keycloak:/scripts
+    environment:
+      KEYCLOAK_URL: "http://keycloak:8080"
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - default
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     container_name: payments-elasticsearch
