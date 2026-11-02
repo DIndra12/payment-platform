@@ -8,6 +8,8 @@ spring:
     name: api-gateway-service
   profiles:
     active: local
+  main:
+    web-application-type: reactive
 
   # Disable some autoconfiguration features we don't need
   autoconfigure:
@@ -16,15 +18,7 @@ spring:
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 
-logging:
-  level:
-    root: INFO
-    com.payments.platform: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    io.jsonwebtoken: DEBUG
-
-# Keycloak OAuth2 Configuration
-spring:
+  # Keycloak OAuth2 Configuration
   security:
     oauth2:
       resourceserver:
@@ -32,17 +26,24 @@ spring:
           issuer-uri: "http://keycloak:8080/realms/payment-platform"
           jwk-set-uri: "http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs"
 
+logging:
+  level:
+    root: INFO
+    com.payments.platform: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    io.jsonwebtoken: DEBUG
+
 # JWT Configuration (for token generation in tests)
 jwt:
   secret: "your-super-secret-key-that-is-at-least-32-characters-long-for-hs256"
   expiration: 3600000  # 1 hour in milliseconds
 
-# Management endpoints for health checks
+# Management endpoints for health checks, metrics, and tracing
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
@@ -53,3 +54,10 @@ management:
       enabled: true
     readinessState:
       enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0

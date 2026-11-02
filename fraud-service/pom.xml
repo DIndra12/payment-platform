@@ -14,8 +14,13 @@
     <name>fraud-service</name>
     <description>Fraud Risk Evaluation Microservice</description>
 
-    <!-- No dependencies beyond the parent's universal set: this service is stateless
-         (owns no tables), calls nothing downstream, and publishes no events. -->
+    <dependencies>
+        <!-- Tracing: Micrometer bridge to OpenTelemetry -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>

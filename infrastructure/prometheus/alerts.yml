@@ -1,0 +1,48 @@
+groups:
+  - name: payment_platform_alerts
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~".*-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has not responded for 1 minute"
+
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency on {{ $labels.job }}"
+          description: "P95 latency is {{ $value | humanizeDuration }} on {{ $labels.job }}"
+
+      - alert: DatabaseConnectionPoolExhausted
+        expr: tomcat_jdbc_connections_active{pool=~".*-service.*"} > 8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database pool exhausted on {{ $labels.job }}"
+          description: "Active connections: {{ $value }} on {{ $labels.job }}"
+
+      - alert: KafkaProducerFailures
+        expr: increase(kafka_producer_record_send_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka producer failures on {{ $labels.job }}"
+          description: "Producer failures detected: {{ $value }} on {{ $labels.job }}"

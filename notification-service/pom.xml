@@ -55,6 +55,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Tracing: Micrometer bridge to OpenTelemetry -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

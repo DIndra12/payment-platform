@@ -74,6 +74,9 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
 
 logging:
   level:
