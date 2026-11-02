@@ -93,9 +93,12 @@ CLIENT_RESPONSE=$(curl -s -X POST \
     "publicClient": true,
     "directAccessGrantsEnabled": true,
     "standardFlowEnabled": true,
-    "redirectUris": ["http://localhost:*/*"],
-    "webOrigins": ["http://localhost:*"],
-    "protocol": "openid-connect"
+    "implicitFlowEnabled": false,
+    "serviceAccountsEnabled": false,
+    "redirectUris": ["http://localhost:*/*", "http://localhost:8080/*"],
+    "webOrigins": ["http://localhost:8080", "http://localhost"],
+    "protocol": "openid-connect",
+    "fullScopeAllowed": true
   }')
 
 CLIENT_UUID=$(echo $CLIENT_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
@@ -108,6 +111,25 @@ if [ -z "$CLIENT_UUID" ]; then
 
   CLIENT_UUID=$(echo $SEARCH_RESPONSE | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
   echo "Using existing client UUID: $CLIENT_UUID"
+fi
+
+# If we have client UUID, assign roles to the client
+if [ -n "$CLIENT_UUID" ]; then
+  echo "Assigning roles to client: $CLIENT_UUID"
+  for ROLE in USER ADMIN SUPPORT; do
+    # Get role ID
+    ROLE_ID=$(curl -s "$KEYCLOAK_URL/admin/realms/$REALM/roles/$ROLE" \
+      -H "Authorization: Bearer $ADMIN_TOKEN" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+
+    if [ -n "$ROLE_ID" ]; then
+      # Assign role to client
+      curl -s -X POST \
+        "$KEYCLOAK_URL/admin/realms/$REALM/clients/$CLIENT_UUID/roles" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -d '[{"id":"'$ROLE_ID'","name":"'$ROLE'"}]' > /dev/null 2>&1
+    fi
+  done
 fi
 
 # Create test users
@@ -163,9 +185,8 @@ for ROLE in USER ADMIN SUPPORT; do
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
     -d '{
-      "name": "'$ROLE'",
-      "enabled": true
-    }' || echo "Role $ROLE may already exist"
+      "name": "'$ROLE'"
+    }' > /dev/null 2>&1 || true
 done
 
 echo ""
