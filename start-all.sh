@@ -34,6 +34,7 @@ SERVICES=(
   "payment-service:8083"
   "notification-service:8084"
   "transaction-history-service:8085"
+  "api-gateway-service:8080"
 )
 
 # Flags
@@ -109,7 +110,8 @@ start_docker_infrastructure() {
   print_step "Checking required ports..."
   check_port_available 5432 "PostgreSQL"
   check_port_available 9094 "Kafka"
-  check_port_available 8080 "Keycloak"
+  check_port_available 8090 "Keycloak"
+  check_port_available 8080 "API Gateway"
 
   if [ "$CLEAN_DOCKER" = true ]; then
     print_step "Removing existing containers and volumes (--clean flag set)..."
@@ -296,7 +298,7 @@ print_summary() {
   echo -e "${GREEN}Infrastructure:${NC}"
   echo "  ✓ PostgreSQL:          localhost:5432"
   echo "  ✓ Kafka:               localhost:9094"
-  echo "  ✓ Keycloak:            http://localhost:8080"
+  echo "  ✓ Keycloak:            http://localhost:8090"
   echo ""
 
   echo -e "${YELLOW}Next Steps:${NC}"

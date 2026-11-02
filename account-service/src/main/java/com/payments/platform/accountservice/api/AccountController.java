@@ -20,8 +20,11 @@ public class AccountController {
 
     @PostMapping("/{accountId}")
     public ResponseEntity<AccountResponse> createAccount(@PathVariable UUID accountId) {
-        Account account = accountService.createAccount(accountId);
-        return ResponseEntity.status(201).body(AccountResponse.from(account));
+        // Idempotent: an existing account is returned unchanged with 200, a new one with 201.
+        return accountService.findAccount(accountId)
+                .map(existing -> ResponseEntity.ok(AccountResponse.from(existing)))
+                .orElseGet(() -> ResponseEntity.status(201)
+                        .body(AccountResponse.from(accountService.createAccount(accountId))));
     }
 
     @PostMapping("/{accountId}/debit")

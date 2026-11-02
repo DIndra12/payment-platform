@@ -82,8 +82,8 @@ In Postman:
 **Console shows:**
 ```
 ✅ Test environment variables set successfully
-Payer Account: 00000000-0000-0000-0000-000000000001
-Payee Account: 00000000-0000-0000-0000-000000000002
+Payer Account: 11111111-1111-1111-1111-111111111111
+Payee Account: 22222222-2222-2222-2222-222222222222
 ```
 
 ✅ **If you see this, system is running!**
@@ -122,8 +122,8 @@ In Postman, go to **1. Payment Service**:
   "status": "COMPLETED",
   "amount": 100.00,
   "currency": "INR",
-  "payerAccountId": "00000000-0000-0000-0000-000000000001",
-  "payeeAccountId": "00000000-0000-0000-0000-000000000002",
+  "payerAccountId": "11111111-1111-1111-1111-111111111111",
+  "payeeAccountId": "22222222-2222-2222-2222-222222222222",
   "createdAt": "2026-11-02T10:30:45Z",
   "updatedAt": "2026-11-02T10:30:47Z"
 }
@@ -141,7 +141,7 @@ In Postman, go to **2. Account Service**:
 **Expected Response:**
 ```json
 {
-  "accountId": "00000000-0000-0000-0000-000000000001",
+  "accountId": "11111111-1111-1111-1111-111111111111",
   "balance": 9900.00,
   "currency": "INR"
 }
@@ -159,7 +159,7 @@ In Postman, go to **4. Transaction History Service**:
 **Expected Response:**
 ```json
 {
-  "accountId": "00000000-0000-0000-0000-000000000001",
+  "accountId": "11111111-1111-1111-1111-111111111111",
   "totalTransactions": 1,
   "transactions": [
     {

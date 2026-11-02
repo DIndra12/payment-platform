@@ -34,10 +34,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KeycloakTokenValidator {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://keycloak:8080/realms/payment-platform}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:http://localhost:8090/realms/payment-platform}")
     private String issuerUri;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:http://keycloak:8080/realms/payment-platform/protocol/openid-connect/certs}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:http://localhost:8090/realms/payment-platform/protocol/openid-connect/certs}")
     private String jwkSetUri;
 
     @Value("${jwt.secret:your-super-secret-key-that-is-at-least-32-characters-long-for-hs256}")
@@ -70,21 +70,22 @@ public class KeycloakTokenValidator {
 
     private Claims validateWithKeycloak(String token) {
         try {
-            // Decode header to get kid (key ID)
-            Jws<Claims> jws = Jwts.parserBuilder()
-                    .requireIssuer(issuerUri)
-                    .build()
-                    .parseClaimsJws(token);
-
-            String kid = jws.getHeader().getKeyId();
-            log.debug("Token kid: {}", kid);
-
-            // Get public key from Keycloak
-            PublicKey publicKey = getPublicKey(kid);
-
-            // Validate with public key
+            // Resolve the public key from the token header's kid while parsing.
+            // (A signed JWS can't be parsed without a key, so the kid can't be read in a separate pass.)
             Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(publicKey)
+                    .setSigningKeyResolver(new SigningKeyResolverAdapter() {
+                        @Override
+                        public Key resolveSigningKey(JwsHeader header, Claims unverifiedClaims) {
+                            log.debug("Token kid: {}", header.getKeyId());
+                            try {
+                                return getPublicKey(header.getKeyId());
+                            } catch (JwtValidationException e) {
+                                throw e;
+                            } catch (Exception e) {
+                                throw new JwtValidationException("Could not fetch Keycloak public key", e);
+                            }
+                        }
+                    })
                     .requireIssuer(issuerUri)
                     .build()
                     .parseClaimsJws(token)
