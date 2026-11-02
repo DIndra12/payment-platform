@@ -19,13 +19,25 @@ echo "Keycloak URL: $KEYCLOAK_URL"
 
 # Wait for Keycloak to be ready
 echo "Waiting for Keycloak to be ready..."
-for i in {1..30}; do
-  if curl -s "$KEYCLOAK_URL/health/ready" > /dev/null 2>&1; then
+for i in {1..60}; do
+  # Try the health endpoint with better error handling
+  HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" "$KEYCLOAK_URL/health/ready" 2>/dev/null)
+  HTTP_CODE=$(echo "$HEALTH_RESPONSE" | tail -n1)
+
+  if [ "$HTTP_CODE" = "200" ]; then
     echo "Keycloak is ready!"
     break
   fi
-  echo "Attempt $i/30: Waiting for Keycloak..."
-  sleep 2
+
+  # Also try alternate endpoint if health/ready fails
+  if curl -s "$KEYCLOAK_URL/" > /dev/null 2>&1; then
+    echo "Keycloak is reachable! Proceeding with initialization..."
+    sleep 2
+    break
+  fi
+
+  echo "Attempt $i/60: Waiting for Keycloak (HTTP $HTTP_CODE)..."
+  sleep 1
 done
 
 # Get admin token
