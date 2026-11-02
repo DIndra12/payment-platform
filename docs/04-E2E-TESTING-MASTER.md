@@ -94,6 +94,7 @@ Infrastructure (8):
 - **Internal (container-to-container)**: `http://keycloak:8080`
 - The `keycloak-init` service automatically sets up the realm, client, roles, and test users on startup
 
+
 ### 1.4 Existing Documentation
 
 **Three detailed guides** (in `docs/` directory):
